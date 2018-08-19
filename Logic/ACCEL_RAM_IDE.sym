@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<symbol version="7" name="ACCEL_RAM_IDE">
+    <symboltype>BLOCK</symboltype>
+    <timestamp>2018-7-3T22:41:48</timestamp>
+    <attr value="ACCEL_RAM_IDE" name="VeriModel" />
+    <pin polarity="Input" x="0" y="-1120" name="RESET" />
+    <pin polarity="Input" x="0" y="-1056" name="MB_CLK" />
+    <pin polarity="Input" x="0" y="-992" name="CPU_CLK" />
+    <pin polarity="Input" x="0" y="-928" name="CPU_AS" />
+    <pin polarity="Input" x="0" y="-864" name="MB_DTACK" />
+    <pin polarity="Input" x="0" y="-800" name="MB_VPA" />
+    <pin polarity="Input" x="0" y="-736" name="BR" />
+    <pin polarity="Input" x="0" y="-672" name="BG" />
+    <pin polarity="Input" x="0" y="-608" name="BERR" />
+    <pin polarity="Input" x="0" y="-544" name="RW" />
+    <pin polarity="Input" x="0" y="-480" name="LDS" />
+    <pin polarity="Input" x="0" y="-416" name="UDS" />
+    <pin polarity="Input" x="0" y="-352" name="HALT" />
+    <pin polarity="Input" x="0" y="-288" name="SPI_MISO" />
+    <pin polarity="Input" x="0" y="-224" name="SPARE_NO_CONNECT" />
+    <pin polarity="Input" x="0" y="-160" name="CPU_FC(2:0)" />
+    <pin polarity="Input" x="0" y="-96" name="CPU_IPL(2:0)" />
+    <pin polarity="Input" x="0" y="-32" name="ADDRESS(23:1)" />
+    <pin polarity="Output" x="528" y="-1120" name="MB_AS" />
+    <pin polarity="Output" x="528" y="-1056" name="CPU_DTACK" />
+    <pin polarity="Output" x="528" y="-992" name="MB_E_CLK" />
+    <pin polarity="Output" x="528" y="-928" name="MB_VMA" />
+    <pin polarity="Output" x="528" y="-864" name="MB_BGAK" />
+    <pin polarity="Output" x="528" y="-800" name="CPU_AVEC" />
+    <pin polarity="Output" x="528" y="-736" name="IDE_RW" />
+    <pin polarity="Output" x="528" y="-672" name="IDE_RESET" />
+    <pin polarity="Output" x="528" y="-608" name="IDE_READ" />
+    <pin polarity="Output" x="528" y="-544" name="IDE_WRITE" />
+    <pin polarity="Output" x="528" y="-480" name="SPI_CS" />
+    <pin polarity="Output" x="528" y="-416" name="SPI_MOSI" />
+    <pin polarity="Output" x="528" y="-352" name="SPI_SCK" />
+    <pin polarity="Output" x="528" y="-288" name="IDE_CS(1:0)" />
+    <pin polarity="Output" x="528" y="-224" name="RAM_CS(3:0)" />
+    <pin polarity="Output" x="528" y="-160" name="SPARE(1:0)" />
+    <pin polarity="BiDirectional" x="528" y="-96" name="DATA(15:0)" />
+    <graph>
+        <rect width="400" x="64" y="-1152" height="1152" />
+        <attrtext style="alignment:BCENTER;fontsize:56;fontname:Arial" attrname="SymbolName" x="264" y="-1160" type="symbol" />
+        <attrtext style="fontsize:24;fontname:Arial" attrname="PinName" x="72" y="-1120" type="pin RESET" />
+        <line x2="0" y1="-1120" y2="-1120" x1="64" />
+        <attrtext style="fontsize:24;fontname:Arial" attrname="PinName" x="72" y="-1056" type="pin MB_CLK" />
+        <line x2="0" y1="-1056" y2="-1056" x1="64" />
+        <attrtext style="fontsize:24;fontname:Arial" attrname="PinName" x="72" y="-992" type="pin CPU_CLK" />
+        <line x2="0" y1="-992" y2="-992" x1="64" />
+        <attrtext style="fontsize:24;fontname:Arial" attrname="PinName" x="72" y="-928" type="pin CPU_AS" />
+        <line x2="0" y1="-928" y2="-928" x1="64" />
+        <attrtext style="fontsize:24;fontname:Arial" attrname="PinName" x="72" y="-864" type="pin MB_DTACK" />
+        <line x2="0" y1="-864" y2="-864" x1="64" />
+        <attrtext style="fontsize:24;fontname:Arial" attrname="PinName" x="72" y="-800" type="pin MB_VPA" />
+        <line x2="0" y1="-800" y2="-800" x1="64" />
+        <attrtext style="fontsize:24;fontname:Arial" attrname="PinName" x="72" y="-736" type="pin BR" />
+        <line x2="0" y1="-736" y2="-736" x1="64" />
+        <attrtext style="fontsize:24;fontname:Arial" attrname="PinName" x="72" y="-672" type="pin BG" />
+        <line x2="0" y1="-672" y2="-672" x1="64" />
+        <attrtext style="fontsize:24;fontname:Arial" attrname="PinName" x="72" y="-608" type="pin BERR" />
+        <line x2="0" y1="-608" y2="-608" x1="64" />
+        <attrtext style="fontsize:24;fontname:Arial" attrname="PinName" x="72" y="-544" type="pin RW" />
+        <line x2="0" y1="-544" y2="-544" x1="64" />
+        <attrtext style="fontsize:24;fontname:Arial" attrname="PinName" x="72" y="-480" type="pin LDS" />
+        <line x2="0" y1="-480" y2="-480" x1="64" />
+        <attrtext style="fontsize:24;fontname:Arial" attrname="PinName" x="72" y="-416" type="pin UDS" />
+        <line x2="0" y1="-416" y2="-416" x1="64" />
+        <attrtext style="fontsize:24;fontname:Arial" attrname="PinName" x="72" y="-352" type="pin HALT" />
+        <line x2="0" y1="-352" y2="-352" x1="64" />
+        <attrtext style="fontsize:24;fontname:Arial" attrname="PinName" x="72" y="-288" type="pin SPI_MISO" />
+        <line x2="0" y1="-288" y2="-288" x1="64" />
+        <attrtext style="fontsize:24;fontname:Arial" attrname="PinName" x="72" y="-224" type="pin SPARE_NO_CONNECT" />
+        <line x2="0" y1="-224" y2="-224" x1="64" />
+        <attrtext style="fontsize:24;fontname:Arial" attrname="PinName" x="72" y="-160" type="pin CPU_FC(2:0)" />
+        <rect width="64" x="0" y="-172" height="24" />
+        <line x2="0" y1="-160" y2="-160" x1="64" />
+        <attrtext style="fontsize:24;fontname:Arial" attrname="PinName" x="72" y="-96" type="pin CPU_IPL(2:0)" />
+        <rect width="64" x="0" y="-108" height="24" />
+        <line x2="0" y1="-96" y2="-96" x1="64" />
+        <attrtext style="fontsize:24;fontname:Arial" attrname="PinName" x="72" y="-32" type="pin ADDRESS(23:1)" />
+        <rect width="64" x="0" y="-44" height="24" />
+        <line x2="0" y1="-32" y2="-32" x1="64" />
+        <attrtext style="alignment:RIGHT;fontsize:24;fontname:Arial" attrname="PinName" x="456" y="-1120" type="pin MB_AS" />
+        <line x2="528" y1="-1120" y2="-1120" x1="464" />
+        <attrtext style="alignment:RIGHT;fontsize:24;fontname:Arial" attrname="PinName" x="456" y="-1056" type="pin CPU_DTACK" />
+        <line x2="528" y1="-1056" y2="-1056" x1="464" />
+        <attrtext style="alignment:RIGHT;fontsize:24;fontname:Arial" attrname="PinName" x="456" y="-992" type="pin MB_E_CLK" />
+        <line x2="528" y1="-992" y2="-992" x1="464" />
+        <attrtext style="alignment:RIGHT;fontsize:24;fontname:Arial" attrname="PinName" x="456" y="-928" type="pin MB_VMA" />
+        <line x2="528" y1="-928" y2="-928" x1="464" />
+        <attrtext style="alignment:RIGHT;fontsize:24;fontname:Arial" attrname="PinName" x="456" y="-864" type="pin MB_BGAK" />
+        <line x2="528" y1="-864" y2="-864" x1="464" />
+        <attrtext style="alignment:RIGHT;fontsize:24;fontname:Arial" attrname="PinName" x="456" y="-800" type="pin CPU_AVEC" />
+        <line x2="528" y1="-800" y2="-800" x1="464" />
+        <attrtext style="alignment:RIGHT;fontsize:24;fontname:Arial" attrname="PinName" x="456" y="-736" type="pin IDE_RW" />
+        <line x2="528" y1="-736" y2="-736" x1="464" />
+        <attrtext style="alignment:RIGHT;fontsize:24;fontname:Arial" attrname="PinName" x="456" y="-672" type="pin IDE_RESET" />
+        <line x2="528" y1="-672" y2="-672" x1="464" />
+        <attrtext style="alignment:RIGHT;fontsize:24;fontname:Arial" attrname="PinName" x="456" y="-608" type="pin IDE_READ" />
+        <line x2="528" y1="-608" y2="-608" x1="464" />
+        <attrtext style="alignment:RIGHT;fontsize:24;fontname:Arial" attrname="PinName" x="456" y="-544" type="pin IDE_WRITE" />
+        <line x2="528" y1="-544" y2="-544" x1="464" />
+        <attrtext style="alignment:RIGHT;fontsize:24;fontname:Arial" attrname="PinName" x="456" y="-480" type="pin SPI_CS" />
+        <line x2="528" y1="-480" y2="-480" x1="464" />
+        <attrtext style="alignment:RIGHT;fontsize:24;fontname:Arial" attrname="PinName" x="456" y="-416" type="pin SPI_MOSI" />
+        <line x2="528" y1="-416" y2="-416" x1="464" />
+        <attrtext style="alignment:RIGHT;fontsize:24;fontname:Arial" attrname="PinName" x="456" y="-352" type="pin SPI_SCK" />
+        <line x2="528" y1="-352" y2="-352" x1="464" />
+        <attrtext style="alignment:RIGHT;fontsize:24;fontname:Arial" attrname="PinName" x="456" y="-288" type="pin IDE_CS(1:0)" />
+        <rect width="64" x="464" y="-300" height="24" />
+        <line x2="528" y1="-288" y2="-288" x1="464" />
+        <attrtext style="alignment:RIGHT;fontsize:24;fontname:Arial" attrname="PinName" x="456" y="-224" type="pin RAM_CS(3:0)" />
+        <rect width="64" x="464" y="-236" height="24" />
+        <line x2="528" y1="-224" y2="-224" x1="464" />
+        <attrtext style="alignment:RIGHT;fontsize:24;fontname:Arial" attrname="PinName" x="456" y="-160" type="pin SPARE(1:0)" />
+        <rect width="64" x="464" y="-172" height="24" />
+        <line x2="528" y1="-160" y2="-160" x1="464" />
+        <attrtext style="alignment:RIGHT;fontsize:24;fontname:Arial" attrname="PinName" x="456" y="-96" type="pin DATA(15:0)" />
+        <rect width="64" x="464" y="-108" height="24" />
+        <line x2="528" y1="-96" y2="-96" x1="464" />
+    </graph>
+</symbol>
