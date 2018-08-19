@@ -1,8 +1,38 @@
 # A500_ACCEL_RAM_IDE-Rev-2
-Improved design attempt for Amiga 500 in socket 68000 Accelerator, FastRAM and IDE Interface 
+Improved design attempt for Amiga 500 in socket 68000 Accelerator, FastRAM and IDE Interface
 
 # Warning
 This design has not been compliance tested and will not be. It may cause damage to your A500. I take no responsibility for this. I accept no responsibility for any damage to any equipment that results from the use of this design and its components. IT IS ENTIRELY AT YOUR OWN RISK!
 
 # Overview
-The main purpose of this design is to improve on of the Rev 1. As the Rev 1 design was essentially a proof of concept, Rev 2 will support a Larger CPLD, SPI Headers, Expansion Header, Configuration Jumpers and an IDE header which is correctly pinned. However, most importantly support the MC68SEC000.
+The main purpose of this design is to improve on of the Rev 1. As the Rev 1 design was essentially a proof of concept, Rev 2 supports a larger CPLD (95144), SPI Flash, buffered IDE Interface, 2 Spare IO header pins and 2MB SRAM. However, most importantly support for the MC68SEC000 which can be  aggressively clocked.
+
+### Appearance
+Nice 3D model:
+![3D Model](/Images/A500_ACCEL_RAM_IDE.jpg)
+
+... and the populated PCB with only 1MB of SRAM (FastRAM) and 128MByte DOM:
+![Populated PCB](/Images/HardwareWithIDE.jpg)
+
+My design goals for the Rev 2 design were to:
+
+1. Use a larger CPLD to contain all the logic from Rev 1.
+2. Support up to 40MHz without 0 Waitstates.
+3. Support IDE.device (credit to Matthais Heinrichs https://github.com/MHeinrichs) for a simple and quick IDE interface.
+4. Have a SPI interface / SPI Flash for available to eventually support Flash based Kickstarts.
+
+Here is the performance overview at 30MHz:
+![30 MHz](/Images/PerformanceOverview_30MHz.jpg)
+
+... and at 40MHz:
+![40 MHz](/Images/PerformanceOverview_40MHz.jpg)
+
+### Known Issues And Pending Changes
+While populated and debugging Rev 2 naturally issues where found and better ideas came to mind. Also contributions from the Amiga community (http://eab.abime.net/showpost.php?p=1252874&postcount=64). The following corrections / improvements are pending the next design iteration:
+
+1. Change all SMD capacitors and resistors to 0804 packages with hand-soldering footprints to improve soldering.
+2. Increase thermal relief around THD and SMD GND connections to improve soldering (as PCB is 4 layers).
+3. Add 10uF filtering around the power components (+3.3 volt regulator, CPLD and 68SEC000).
+4. Route PIN 20 of IDE interface to +5V to support DOMs without the need for a power cable.
+5. IDE_IRQ to be routed to the CPLD (additional reason why IDE.device was used). Additionally add IDE_WAIT to the CPLD to have the option to support /DTACK Waitstates.
+6. Add XTAL Clock buffer.
