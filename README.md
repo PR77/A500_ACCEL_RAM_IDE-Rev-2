@@ -18,7 +18,7 @@ My design goals for the Rev 2 design were to:
 
 1. Use a larger CPLD to contain all the logic from Rev 1.
 2. Support up to 40MHz without 0 Waitstates.
-3. Support IDE.device (credit to Matthias Heinrichs https://github.com/MHeinrichs) for a simple and quick IDE interface.
+3. Support IDE.device (credit to MHeinrichs https://github.com/MHeinrichs) for a simple and quick IDE interface.
 4. Have a SPI interface / SPI Flash for available to eventually support Flash based Kickstarts.
 
 Here is the performance overview at 30MHz:
