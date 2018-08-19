@@ -16,7 +16,7 @@ Nice 3D model:
 
 My design goals for the Rev 2 design were to:
 
-1. Use a larger CPLD to contain all the logic from Rev 1.
+1. Use a larger CPLD to contain all the logic (and more) from Rev 1.
 2. Support up to 40MHz without 0 Waitstates.
 3. Support IDE.device (credit to MHeinrichs https://github.com/MHeinrichs) for a simple and quick IDE interface.
 4. Have a SPI interface / SPI Flash for available to eventually support Flash based Kickstarts.
@@ -31,8 +31,9 @@ Here is the performance overview at 30MHz:
 While populated and debugging Rev 2 naturally issues where found and better ideas came to mind. Also contributions from the Amiga community (http://eab.abime.net/showpost.php?p=1252874&postcount=64). The following corrections / improvements are pending the next design iteration:
 
 1. Change all SMD capacitors and resistors to 0804 packages with hand-soldering footprints to improve soldering.
-2. Increase thermal relief around THD and SMD GND connections to improve soldering (as PCB is 4 layers).
-3. Add 10uF filtering around the power components (+3.3 volt regulator, CPLD and 68SEC000).
-4. Route PIN 20 of IDE interface to +5V to support DOMs without the need for a power cable.
-5. IDE_IRQ to be routed to the CPLD (additional reason why IDE.device was used). Additionally add IDE_WAIT to the CPLD to have the option to support /DTACK Waitstates.
-6. Add XTAL Clock buffer.
+2. Correct SPI Flash footprint.
+3. Increase thermal relief around THD and SMD GND connections to improve soldering (as PCB is 4 layers).
+4. Add 10uF filtering around the power components (+3.3 volt regulator, CPLD and 68SEC000).
+5. Route PIN 20 of IDE interface to +5V to support DOMs without the need for a power cable.
+6. IDE_IRQ to be routed to the CPLD (additional reason why IDE.device was used). Additionally add IDE_WAIT to the CPLD to have the option to support /DTACK Waitstates.
+7. Add XTAL Clock buffer.
