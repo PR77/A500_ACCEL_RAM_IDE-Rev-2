@@ -37,4 +37,4 @@ While populated and debugging Rev 2 naturally issues where found and better idea
 5. Route PIN 20 of IDE interface to +5V to support DOMs without the need for a power cable.
 6. IDE_IRQ to be routed to the CPLD (additional reason why IDE.device was used). Additionally add IDE_WAIT to the CPLD to have the option to support /DTACK Waitstates.
 7. Add XTAL Clock buffer.
-8. Suppress /MB_AS while Accelerator Card ZII AutoConfig has not completed. Should then allow a cascaded AutoConfig chain.
+8. Support a cascaded AutoConfig chain.
