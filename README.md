@@ -9,7 +9,7 @@ The main purpose of this design is to improve on of the Rev 1. As the Rev 1 desi
 
 ### Appearance
 Nice 3D model:
-![3D Model](/Images/A500_ACCEL_RAM_IDE.jpg)
+![3D Model](/Images/A500_ACCEL_RAM_IDE.png)
 
 ... and the populated PCB with only 1MB of SRAM (FastRAM) and 128MByte DOM:
 ![Populated PCB](/Images/HardwareWithIDE.jpg)
