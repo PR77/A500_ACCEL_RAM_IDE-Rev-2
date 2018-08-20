@@ -28,7 +28,7 @@ Here is the performance overview at 30MHz:
 ![40 MHz](/Images/PerformanceOverview_40MHz.jpg)
 
 ### Known Issues And Pending Changes
-While populated and debugging Rev 2 naturally issues where found and better ideas came to mind. Also contributions from the Amiga community (http://eab.abime.net/showpost.php?p=1252874&postcount=64). The following corrections / improvements are pending the next design iteration:
+While populated and debugging Rev 2 naturally issues where found and better ideas came to mind. Also contributions from the Amiga community (http://eab.abime.net/showthread.php?t=89165). The following corrections / improvements are pending the next design iteration:
 
 1. Change all SMD capacitors and resistors to 0804 packages with hand-soldering footprints to improve soldering.
 2. Correct SPI Flash footprint.
