@@ -17,7 +17,7 @@ Nice 3D model:
 My design goals for the Rev 2 design were to:
 
 1. Use a larger CPLD to contain all the logic (and more) from Rev 1.
-2. Support up to 40MHz without 0 Waitstates.
+2. Support up to 40MHz with 0 Waitstates.
 3. Support IDE.device (credit to MHeinrichs https://github.com/MHeinrichs) for a simple and quick IDE interface.
 4. Have a SPI interface / SPI Flash for available to eventually support Flash based Kickstarts.
 
@@ -37,4 +37,4 @@ While populated and debugging Rev 2 naturally issues where found and better idea
 5. Route PIN 20 of IDE interface to +5V to support DOMs without the need for a power cable.
 6. IDE_IRQ to be routed to the CPLD (additional reason why IDE.device was used). Additionally add IDE_WAIT to the CPLD to have the option to support /DTACK Waitstates.
 7. Add XTAL Clock buffer.
-8. Support a cascaded AutoConfig chain.
+8. Support a cascaded AutoConfig chain (implemented - still to be tested).
