@@ -99,7 +99,7 @@ reg [7:0] autoConfigBaseIOPort = 8'b00000000;
 
 wire DS = (LDS & UDS);
 
-wire AUTOCONFIG_RANGE = ({ADDRESS[23:16]} == {8'hE8}) && ~&shutup && ~&configured;
+wire AUTOCONFIG_RANGE = ({ADDRESS[23:16]} == {8'hE8}) && ~CPU_AS && ~&shutup && ~&configured;
 wire AUTOCONFIG_READ = (AUTOCONFIG_RANGE && (RW == 1'b1));
 wire AUTOCONFIG_WRITE = (AUTOCONFIG_RANGE && (RW == 1'b0));
 
@@ -124,7 +124,7 @@ always @(negedge DS or negedge RESET) begin
             // AutoConfig Write sequence. Here is where we receive from the OS the base address for the RAM.
             case (ADDRESS[7:1])
                 8'h24: begin
-
+                // Written second
                     if (configured[2:0] == 3'b000) begin
                         autoConfigBaseFastRam[7:4] <= DATA[15:12];      // FastRAM
                         configured[0] <= 1'b1;
@@ -142,15 +142,17 @@ always @(negedge DS or negedge RESET) begin
                 end
 
                 8'h25: begin
+                // Written first
                     if ({configured[2:0] == 3'b000}) autoConfigBaseFastRam[3:0] <= DATA[15:12]; // FastRAM
-                    if ({configured[0] == 1'b1}) autoConfigBaseSPI[3:0] <= DATA[15:12];         // SPI
-                    if ({configured[1] == 1'b1}) autoConfigBaseIOPort[3:0] <= DATA[15:12];      // IO Port
+                    if ({configured[2:0] == 3'b001}) autoConfigBaseSPI[3:0] <= DATA[15:12];     // SPI
+                    if ({configured[2:0] == 3'b011}) autoConfigBaseIOPort[3:0] <= DATA[15:12];  // IO Port
                 end
 
                 8'h26: begin
-                    if ({configured[0] == 1'b1}) shutup[0] <= 1'b1;   // FastRAM
-                    if ({configured[1] == 1'b1}) shutup[1] <= 1'b1;   // IO Port A
-                    if ({configured[2] == 1'b1}) shutup[2] <= 1'b1;   // IO Port B
+                // Written last
+                    if ({configured[2:0] == 3'b001}) shutup[0] <= 1'b1;   // FastRAM
+                    if ({configured[2:0] == 3'b011}) shutup[1] <= 1'b1;   // IO Port A
+                    if ({configured[2:0] == 3'b111}) shutup[2] <= 1'b1;   // IO Port B
                 end
                 
             endcase
@@ -326,7 +328,7 @@ reg delayedMB_AS = 1'b1;
 reg delayedMB_DTACK = 1'b1;
 reg fastCPU_DTACK = 1'b1;
 
-// Shift /CPU_AS into the 7MHz clock domain gated by FASTRAM_RANGE (MB_AS is not asserted during FASTRAM cycles).
+// Shift /CPU_AS into the 7MHz clock domain gated by FASTRAM_RANGE | AUTOCONFIG_RANGE (MB_AS is not asserted during internal cycles).
 // Delay /MB_DTACK by 1 7MHz clock cycle to sync up to asynchronous CPU_CLK.
 always @(posedge MB_CLK or posedge CPU_AS) begin
     
@@ -335,19 +337,19 @@ always @(posedge MB_CLK or posedge CPU_AS) begin
         delayedMB_AS <= 1'b1;
     end else begin
     
-        delayedMB_AS <= CPU_AS | FASTRAM_RANGE;
+        delayedMB_AS <= CPU_AS | FASTRAM_RANGE | AUTOCONFIG_RANGE;
         delayedMB_DTACK <= MB_DTACK;
     end
 end
 
-// Generate a fast DTACK for accesses in Interal Space (FASTRAM_RANGE)
+// Generate a fast DTACK for accesses in Interal Space (FASTRAM_RANGE | AUTOCONFIG_RANGE)
 always @(posedge CPU_CLK or posedge CPU_AS) begin
     
     if (CPU_AS == 1'b1) begin
         fastCPU_DTACK <= 1'b1;
     end else begin
     
-        fastCPU_DTACK <= ~FASTRAM_RANGE;
+        fastCPU_DTACK <= ~FASTRAM_RANGE & ~AUTOCONFIG_RANGE;
     end
 end
 
