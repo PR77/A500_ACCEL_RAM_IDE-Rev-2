@@ -210,20 +210,17 @@ always @(negedge DS or negedge RESET) begin
 end
 
 // Output specific AUTOCONFIG data.
-assign DATA[15:12] = (AUTOCONFIG_READ == 1'b1) ? autoConfigData : 4'bZZZZ;
+assign DATA[15:12] = (AUTOCONFIG_READ == 1'b1 && ~&shutup) ? autoConfigData : 4'bZZZZ;
 
 // --- RAM Control
 
 // RAM control arbitration.
-assign RAM_CS[0] = ~(FASTRAM_RANGE && ~LDS);
-assign RAM_CS[1] = ~(FASTRAM_RANGE && ~UDS);
-assign RAM_CS[2] = 1'b1;
-assign RAM_CS[3] = 1'b1;
+assign RAM_CS[3:0] = FASTRAM_RANGE ? {1'b1, 1'b1, UDS, LDS} : {1'b1, 1'b1, 1'b1, 1'b1};
 
 // --- IDE Control
 
 // IDE Port arbitrations.
-assign IDE_CS[1:0] = ADDRESS[13:12];
+assign IDE_CS[1:0] = ADDRESS[12] ? {~IDE_RANGE, 1'b1} : {1'b1, ~IDE_RANGE};
 assign IDE_RESET = RESET;
 assign IDE_READ = ((IDE_RANGE == 1'b1) && (RW == 1'b1)) ? 1'b0 : 1'b1;
 assign IDE_WRITE = ((IDE_RANGE == 1'b1) && (RW == 1'b0) && (DS == 1'b0)) ? 1'b0 : 1'b1;
@@ -350,6 +347,8 @@ always @(posedge CPU_CLK or posedge CPU_AS) begin
     end else begin
     
         fastCPU_DTACK <= ~FASTRAM_RANGE & ~AUTOCONFIG_RANGE;
+        
+        // IDE_RANGE, SPI_RANGE and IOPORT_RANGE are handled with slow /DTACKS.
     end
 end
 
