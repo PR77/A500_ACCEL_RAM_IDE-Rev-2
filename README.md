@@ -37,4 +37,5 @@ While populated and debugging Rev 2 naturally issues where found and better idea
 5. Route PIN 20 of IDE interface to +5V to support DOMs without the need for a power cable.
 6. IDE_IRQ to be routed to the CPLD (additional reason why IDE.device was used). Additionally add IDE_WAIT to the CPLD to have the option to support /DTACK Waitstates.
 7. Add XTAL Clock buffer.
-8. Support a cascaded AutoConfig chain (implemented - still to be tested).
+8. Change RAM Control signals to have /CS tied to GND and connect /OE to CPLD. RAM access can be faster.
+9. Support a cascaded AutoConfig chain (implemented - still to be tested).
