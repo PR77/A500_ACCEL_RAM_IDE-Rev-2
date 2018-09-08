@@ -103,18 +103,18 @@ wire AUTOCONFIG_RANGE = ({ADDRESS[23:16]} == {8'hE8}) && ~CPU_AS && ~&shutup && 
 wire AUTOCONFIG_READ = (AUTOCONFIG_RANGE && (RW == 1'b1));
 wire AUTOCONFIG_WRITE = (AUTOCONFIG_RANGE && (RW == 1'b0));
 
-wire IDE_RANGE = ({ADDRESS[23:16]} == {8'hEF}) && ~CPU_AS;
+wire IDE_RANGE = ({ADDRESS[23:16]} == {8'hEF}) && ~CPU_AS && ~DS;
 
-wire FASTRAM_RANGE = ({ADDRESS[23:20]} == {autoConfigBaseFastRam[7:4]}) && ~CPU_AS && configured[0];
-wire SPI_RANGE = ({ADDRESS[23:20]} == {autoConfigBaseSPI[7:4]}) && ~CPU_AS && configured[1];
-wire IOPORT_RANGE = ({ADDRESS[23:20]} == {autoConfigBaseIOPort[7:4]}) && ~CPU_AS && configured[2];
+wire FASTRAM_RANGE = ({ADDRESS[23:20]} == {autoConfigBaseFastRam[7:4]}) && ~CPU_AS && ~DS && configured[0];
+wire SPI_RANGE = ({ADDRESS[23:20]} == {autoConfigBaseSPI[7:4]}) && ~CPU_AS && ~DS && configured[1];
+wire IOPORT_RANGE = ({ADDRESS[23:20]} == {autoConfigBaseIOPort[7:4]}) && ~CPU_AS && ~DS && configured[2];
 
 // AUTOCONFIG cycle.
 always @(negedge DS or negedge RESET) begin
     
     if (RESET == 1'b0) begin
-        configured[2:0] <= 3'b000;
-        shutup[2:0] <= 3'b000;
+        configured[2:0] <= 3'b000; 
+        shutup[2:0] <= 3'b000;     
         autoConfigBaseFastRam[7:0] <= 8'h0;
         autoConfigBaseSPI[7:0] <= 8'h0;
         autoConfigBaseIOPort[7:0] <= 8'h0;
@@ -223,7 +223,7 @@ assign RAM_CS[3:0] = FASTRAM_RANGE ? {1'b1, 1'b1, UDS, LDS} : {1'b1, 1'b1, 1'b1,
 assign IDE_CS[1:0] = ADDRESS[12] ? {~IDE_RANGE, 1'b1} : {1'b1, ~IDE_RANGE};
 assign IDE_RESET = RESET;
 assign IDE_READ = ((IDE_RANGE == 1'b1) && (RW == 1'b1)) ? 1'b0 : 1'b1;
-assign IDE_WRITE = ((IDE_RANGE == 1'b1) && (RW == 1'b0) && (DS == 1'b0)) ? 1'b0 : 1'b1;
+assign IDE_WRITE = ((IDE_RANGE == 1'b1) && (RW == 1'b0)) ? 1'b0 : 1'b1;
 
 // 74HCT245 Direction Control. HIGH: A(in) = B(out), LOW: B(in) = A(out).
 assign IDE_RW = (IDE_READ == 1'b0) ? 1'b0 : 1'b1;
@@ -239,7 +239,7 @@ always @(negedge CPU_CLK or negedge RESET) begin
         IOPORTData[1:0] <= 2'h0;
     end else begin
 
-        if ((IOPORT_RANGE == 1'b1) && (RW == 1'b0) && (DS == 1'b0))
+        if ((IOPORT_RANGE == 1'b1) && (RW == 1'b0))
             IOPORTData[1:0] <= DATA[15:14];
     end
 end
