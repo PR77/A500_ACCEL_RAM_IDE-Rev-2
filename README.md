@@ -31,11 +31,11 @@ Here is the performance overview at 30MHz:
 While populated and debugging Rev 2 naturally issues where found and better ideas came to mind. Also contributions from the Amiga community (http://eab.abime.net/showthread.php?t=89165). The following corrections / improvements are pending the next design iteration:
 
 1. Change all SMD capacitors and resistors to 0804 packages with hand-soldering footprints to improve soldering.
-2. Correct SPI Flash footprint.
+2. Correct SPI Flash footprint. Or considering to remove it as I see no immediate benefit.
 3. Increase thermal relief around THD and SMD GND connections to improve soldering (as PCB is 4 layers).
-4. Add 10uF filtering around the power components (+3.3 volt regulator, CPLD and 68SEC000).
+4. Add 10uF filtering around the power components (+3.3 volt regulator, CPLD and 68SEC000) and add pull-ups/downs on JTAG.
 5. Route PIN 20 of IDE interface to +5V to support DOMs without the need for a power cable.
 6. IDE_IRQ to be routed to the CPLD (additional reason why IDE.device was used). Additionally add IDE_WAIT to the CPLD to have the option to support /DTACK Waitstates.
 7. Add XTAL Clock buffer.
-8. Change RAM Control signals to have /CS tied to GND and connect /OE to CPLD. RAM access can be faster.
+8. Change RAM Control signals to have /CS tied to GND and connect /OE and /WR to CPLD. RAM access can be faster.
 9. Support a cascaded AutoConfig chain (implemented - still to be tested).
