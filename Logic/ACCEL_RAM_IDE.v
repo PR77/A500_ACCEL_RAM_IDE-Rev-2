@@ -325,8 +325,12 @@ reg delayedMB_AS = 1'b1;
 reg delayedMB_DTACK = 1'b1;
 reg fastCPU_DTACK = 1'b1;
 
-// Shift /CPU_AS into the 7MHz clock domain gated by FASTRAM_RANGE | AUTOCONFIG_RANGE (MB_AS is not asserted during internal cycles).
-// Delay /MB_DTACK by 1 7MHz clock cycle to sync up to asynchronous CPU_CLK.
+reg [3:0] IDE_WAITSTATES = 4'b0000;
+reg slowIDE_DTACK = 1'b1;
+
+// Shift /CPU_AS into the 7MHz clock domain gated by FASTRAM_RANGE | AUTOCONFIG_RANGE | IDE_RANGE
+// (MB_AS is not asserted during internal cycles). Delay /MB_DTACK by 1 7MHz clock cycle to sync
+// up to asynchronous CPU_CLK.
 always @(posedge MB_CLK or posedge CPU_AS) begin
     
     if (CPU_AS == 1'b1) begin
@@ -334,8 +338,28 @@ always @(posedge MB_CLK or posedge CPU_AS) begin
         delayedMB_AS <= 1'b1;
     end else begin
     
-        delayedMB_AS <= CPU_AS | FASTRAM_RANGE | AUTOCONFIG_RANGE;
+        delayedMB_AS <= CPU_AS | FASTRAM_RANGE | AUTOCONFIG_RANGE | IDE_RANGE;
         delayedMB_DTACK <= MB_DTACK;
+    end
+end
+
+// Generate a slow /DTACK for IDE_RANGE. Helps improve robustness of the IDE interface. Current
+// design has 16 (!!!) WS @ MB_CLK, so the IDE performance is at about 670Kb/s. For general WB
+// tasks this seems to be OK.
+always @(posedge MB_CLK or posedge CPU_AS) begin
+    
+    if (CPU_AS == 1'b1) begin
+        IDE_WAITSTATES <= 4'b0000;
+        slowIDE_DTACK <= 1'b1;
+    end else begin
+    
+        if (IDE_RANGE == 1'b1) begin
+            IDE_WAITSTATES <= IDE_WAITSTATES + 1;
+            
+            if (&IDE_WAITSTATES) begin
+                slowIDE_DTACK <= 1'b0;
+            end
+        end
     end
 end
 
@@ -352,7 +376,7 @@ always @(posedge CPU_CLK or posedge CPU_AS) begin
     end
 end
 
-assign CPU_DTACK = (delayedMB_DTACK & fastCPU_DTACK & MC6800DTACK);
+assign CPU_DTACK = (delayedMB_DTACK & fastCPU_DTACK & slowIDE_DTACK & MC6800DTACK);
 assign MB_AS = delayedMB_AS;
 
 endmodule
