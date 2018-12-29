@@ -89,6 +89,7 @@ assign CPU_IPL = 3'bZZZ;
 
 reg [2:0] configured = 3'b000;
 reg [2:0] shutup = 3'b000;
+reg [2:0] allConfigured = 3'b000;
 reg [3:0] autoConfigData = 4'b0000;
 reg [7:0] autoConfigBaseFastRam = 8'b00000000;
 reg [7:0] autoConfigBaseSPI = 8'b00000000;
@@ -96,33 +97,43 @@ reg [7:0] autoConfigBaseIOPort = 8'b00000000;
 
 wire DS = (LDS & UDS);
 
-wire AUTOCONFIG_RANGE = ({ADDRESS[23:16]} == {8'hE8}) && ~CPU_AS && ~DS && ~(&shutup && &configured);
-wire AUTOCONFIG_READ = (AUTOCONFIG_RANGE && (RW == 1'b1));
-wire AUTOCONFIG_WRITE = (AUTOCONFIG_RANGE && (RW == 1'b0));
+wire AUTOCONFIG_RANGE = ({ADDRESS[23:16]} == {8'hE8}) && ~CPU_AS && ~&allConfigured;
 
 wire IDE_RANGE = ({ADDRESS[23:16]} == {8'hEF}) && ~CPU_AS && ~DS;
-
 wire FASTRAM_RANGE = ({ADDRESS[23:20]} == {autoConfigBaseFastRam[7:4]}) && ~CPU_AS && ~DS && configured[0];
-wire SPI_RANGE = ({ADDRESS[23:20]} == {autoConfigBaseSPI[7:4]}) && ~CPU_AS && ~DS && configured[1];
+wire SPI_RANGE = ({ADDRESS[23:16]} == {autoConfigBaseSPI[7:0]}) && ~CPU_AS && ~DS && configured[1];
 wire IOPORT_RANGE = ({ADDRESS[23:16]} == {autoConfigBaseIOPort[7:0]}) && ~CPU_AS && ~DS && configured[2];
+
+// Create allConfigured array based on "configured" and "shutup" status'.
+always @(posedge CPU_AS or negedge RESET) begin
+
+    if (RESET == 1'b0) begin
+        allConfigured <= 3'b000;
+    
+    end else begin
+    
+        allConfigured <= (configured | shutup);
+    end
+end
 
 // AUTOCONFIG cycle.
 always @(negedge DS or negedge RESET) begin
 
     // Use DS as the entry point to keep this out of a specific clock domain.
-    
+
     if (RESET == 1'b0) begin
         configured[2:0] <= 3'b000; 
-        shutup[2:0] <= 3'b000;     
-        autoConfigBaseFastRam[7:0] <= 8'h0;
-        autoConfigBaseSPI[7:0] <= 8'h0;
-        autoConfigBaseIOPort[7:0] <= 8'h0;
+        shutup[2:0] <= 3'b000;
+        autoConfigData[3:0] <= 4'b1111;
+        autoConfigBaseFastRam[7:0] <= 8'b00000000;
+        autoConfigBaseSPI[7:0] <= 8'b00000000;
+        autoConfigBaseIOPort[7:0] <= 8'b00000000;
     end else begin
 
-       if (AUTOCONFIG_WRITE == 1'b1) begin
+       if (AUTOCONFIG_RANGE == 1'b1 && RW == 1'b0) begin
             // AutoConfig Write sequence. Here is where we receive from the OS the base address for the RAM.
             case (ADDRESS[7:1])
-                8'h24: begin
+                'h24: begin
                 // Written second
                     if (configured[2:0] == 3'b000) begin
                         autoConfigBaseFastRam[7:4] <= DATA[15:12];      // FastRAM
@@ -140,76 +151,75 @@ always @(negedge DS or negedge RESET) begin
                     end
                 end
 
-                8'h25: begin
+                'h25: begin
                 // Written first
                     if ({configured[2:0] == 3'b000}) autoConfigBaseFastRam[3:0] <= DATA[15:12]; // FastRAM
                     if ({configured[2:0] == 3'b001}) autoConfigBaseSPI[3:0] <= DATA[15:12];     // SPI
                     if ({configured[2:0] == 3'b011}) autoConfigBaseIOPort[3:0] <= DATA[15:12];  // IO Port
                 end
 
-                8'h26: begin
-                // Written last
-                    if ({configured[2:0] == 3'b001}) shutup[0] <= 1'b1;   // FastRAM
-                    if ({configured[2:0] == 3'b011}) shutup[1] <= 1'b1;   // IO Port A
-                    if ({configured[2:0] == 3'b111}) shutup[2] <= 1'b1;   // IO Port B
+                'h26: begin
+                // Written asynchronously if the KS decides to not configure a specific device
+                    if ({configured[2:0] == 3'b000}) shutup[0] <= 1'b1;   // FastRAM
+                    if ({configured[2:0] == 3'b001}) shutup[1] <= 1'b1;   // SPI
+                    if ({configured[2:0] == 3'b011}) shutup[2] <= 1'b1;   // IO Port B
                 end
                 
             endcase
         end
 
-        if (AUTOCONFIG_READ == 1'b1) begin
-            // AutoConfig Read sequence. Here is where we publish the RAM and I/O port size and hardware attributes.
-           case (ADDRESS[7:1])
-                8'h00: begin
-                    if ({configured[2:0] == 3'b000}) autoConfigData <= 4'hE;     // (00) FastRAM
-                    if ({configured[2:0] == 3'b001}) autoConfigData <= 4'hC;     // (00) SPI
-                    if ({configured[2:0] == 3'b011}) autoConfigData <= 4'hC;     // (00) IO Port
-                end
-                
-                8'h01: begin
-                    if ({configured[2:0] == 3'b000}) autoConfigData <= 4'h5;     // (02) FastRAM
-                    if ({configured[2:0] == 3'b001}) autoConfigData <= 4'h4;     // (02) SPI
-                    if ({configured[2:0] == 3'b011}) autoConfigData <= 4'h1;     // (02) IO Port
-                end
-                
-                8'h02: autoConfigData <= 4'h9;     // (04)  
-                
-                8'h03: begin
-                    if ({configured[2:0]} == {3'b000}) autoConfigData <= 4'h8;     // (06) FastRAM
-                    if ({configured[2:0]} == {3'b001}) autoConfigData <= 4'h9;     // (06) SPI
-                    if ({configured[2:0]} == {3'b011}) autoConfigData <= 4'hA;     // (06) IO Port
-                end
+        // AutoConfig Read sequence. Here is where we publish the RAM and I/O port size and hardware attributes.
+       case (ADDRESS[7:1])
+            'h00: begin
+                if ({configured[2:0] == 3'b000}) autoConfigData <= 4'hE;     // (00) FastRAM
+                if ({configured[2:0] == 3'b001}) autoConfigData <= 4'hC;     // (00) SPI
+                if ({configured[2:0] == 3'b011}) autoConfigData <= 4'hC;     // (00) IO Port
+            end
+            
+            'h01: begin
+                if ({configured[2:0] == 3'b000}) autoConfigData <= 4'h5;     // (02) FastRAM
+                if ({configured[2:0] == 3'b001}) autoConfigData <= 4'h1;     // (02) SPI
+                if ({configured[2:0] == 3'b011}) autoConfigData <= 4'h1;     // (02) IO Port
+            end
+            
+            'h02: autoConfigData <= 4'h9;     // (04)  
+            
+            'h03: begin
+                if ({configured[2:0]} == {3'b000}) autoConfigData <= 4'h8;     // (06) FastRAM
+                if ({configured[2:0]} == {3'b001}) autoConfigData <= 4'h9;     // (06) SPI
+                if ({configured[2:0]} == {3'b011}) autoConfigData <= 4'hA;     // (06) IO Port
+            end
+            
+            'h04: autoConfigData <= 4'h7;  // (08/0A)
+            'h05: autoConfigData <= 4'hF;
+            
+            'h06: autoConfigData <= 4'hF;  // (0C/0E)
+            'h07: autoConfigData <= 4'hF;
+            
+            'h08: autoConfigData <= 4'hF;  // (10/12)
+            'h09: autoConfigData <= 4'h8;
+            'h0A: autoConfigData <= 4'h4;  // (14/16)
+            'h0B: autoConfigData <= 4'h6;                
+            
+            'h0C: autoConfigData <= 4'hA;  // (18/1A)
+            'h0D: autoConfigData <= 4'hF;
+            'h0E: autoConfigData <= 4'hB;  // (1C/1E)
+            'h0F: autoConfigData <= 4'hE;
+            'h10: autoConfigData <= 4'hA;  // (20/22)
+            'h11: autoConfigData <= 4'hA;
+            'h12: autoConfigData <= 4'hB;  // (24/26)
+            'h13: autoConfigData <= 4'h3;
 
-                8'h04: autoConfigData <= 4'h7;  // (08/0A)
-                8'h05: autoConfigData <= 4'hF;
-                
-                8'h06: autoConfigData <= 4'hF;  // (0C/0E)
-                8'h07: autoConfigData <= 4'hF;
-                
-                8'h08: autoConfigData <= 4'hF;  // (10/12)
-                8'h09: autoConfigData <= 4'h8;
-                8'h0A: autoConfigData <= 4'h4;  // (14/16)
-                8'h0B: autoConfigData <= 4'h6;                
-                
-                8'h0C: autoConfigData <= 4'hA;  // (18/1A)
-                8'h0D: autoConfigData <= 4'hF;
-                8'h0E: autoConfigData <= 4'hB;  // (1C/1E)
-                8'h0F: autoConfigData <= 4'hE;
-                8'h10: autoConfigData <= 4'hA;  // (20/22)
-                8'h11: autoConfigData <= 4'hA;
-                8'h12: autoConfigData <= 4'hB;  // (24/26)
-                8'h13: autoConfigData <= 4'h3;
+            default: 
+                autoConfigData <= 4'hF;
 
-                default: 
-                    autoConfigData <= 4'hF;
-
-            endcase
-        end
-     end
+        endcase
+    end
 end
 
 // Output specific AUTOCONFIG data.
-assign DATA[15:12] = (AUTOCONFIG_READ == 1'b1 /*&& ~DS && ~&shutup*/) ? autoConfigData : 4'bZZZZ;
+assign DATA[15:0] = (AUTOCONFIG_RANGE == 1'b1 && RW == 1'b1 && ~DS && ~&allConfigured) ? {autoConfigData[3:0], 12'bZZZZZZZZZZZZ} :
+                    (SPI_RANGE == 1'b1 && RW == 1'b1) ? {15'bZZZZZZZZZZZZZZZ, SPI_MISO} : 16'bZZZZZZZZZZZZZZZZ;
 
 // --- RAM Control
 
@@ -245,6 +255,30 @@ end
 
 // IO Port arbitrations.
 assign IO_PORT[1:0] = IOPORTData[1:0];
+
+// --- SPI Port Control
+
+reg SPIPortMOSI = 1'b0;
+reg SPIPortSCK = 1'b0; 
+
+always @(negedge CPU_CLK or negedge RESET) begin
+
+    if (RESET == 1'b0) begin
+        SPIPortMOSI <= 1'h0;
+        SPIPortSCK <= 1'h0;
+    end else begin
+
+        if ((SPI_RANGE == 1'b1) && (RW == 1'b0)) begin
+            SPIPortMOSI <= DATA[15];
+            SPIPortSCK <= DATA[0];
+        end
+    end
+end
+
+// SPI Port arbitration
+assign SPI_CS = 1'b0;
+assign SPI_MOSI = SPIPortMOSI;
+assign SPI_SCK = SPIPortSCK;
 
 // --- MC6800 Emulator --- Credit to TerribleFire for all the help with this
 
@@ -375,5 +409,12 @@ end
 
 assign CPU_DTACK = (delayedMB_DTACK & fastCPU_DTACK & slowCPU_DTACK & MC6800DTACK);
 assign MB_AS = (MB_BGAK && HALT) ? delayedMB_AS : 1'bZ;
+
+// --- Debug
+
+/*
+assign IO_PORT[0] = AUTOCONFIG_RANGE;
+assign IO_PORT[1] = slowCPU_DTACK;
+*/
 
 endmodule
