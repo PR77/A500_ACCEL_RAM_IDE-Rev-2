@@ -14,6 +14,11 @@
 #define READ_ID_CMD_ADDR_MANUFACTURE_ID     0x00
 #define READ_ID_CMD_ADDR_DEVICE_ID          0x01
 
+#define SPI_CS_MASK                         0x8000
+#define SPI_SCK_MASK                        0x0001
+#define SPI_MOSI_MASK                       0x0080
+#define SPI_MISO_MASK                       0x0001
+
 /*****************************************************************************/
 /* Types *********************************************************************/
 /*****************************************************************************/
@@ -35,6 +40,7 @@ struct Library *ExpansionBase = NULL;
 /* Prototypes ****************************************************************/
 /*****************************************************************************/
 
+tSpiCommandStatus setSpiChipSelect(ULONG * pDeviceAddress, UBYTE chipSelect);
 tSpiCommandStatus writeSpiCommand(ULONG * pDeviceAddress, UBYTE command);
 tSpiCommandStatus readSpidata(ULONG * pDeviceAddress, UBYTE * pData);
 
@@ -44,6 +50,30 @@ int main(int argc, char **argv);
 /*****************************************************************************/
 /* Code **********************************************************************/
 /*****************************************************************************/
+
+/*****************************************************************************/
+/* Function:    setSpiChipSelect()                                           */
+/* Returns:     tSpiCommandStatus                                            */
+/* Parameters:  ULONG * deviceAddress, UBYTE chipSelect                      */
+/* Description: Controls the SPI device chip select                          */
+/*****************************************************************************/
+tSpiCommandStatus setSpiChipSelect(ULONG * pDeviceAddress, UBYTE chipSelect)
+{
+    tSpiCommandStatus spiCommandStatus = spiIdle;
+    
+#ifndef NDEBUG
+    printf("ENTRY: setSpiChipSelect(ULONG * pDeviceAddress 0x%X, UBYTE chipSelect 0x%X)\n", pDeviceAddress, chipSelect);
+#endif
+         
+#ifndef NDEBUG
+    printf("FLOW: \n");
+#endif
+
+#ifndef NDEBUG
+    printf("EXIT: setSpiChipSelect(spiCommandStatus 0x%X)\n", spiCommandStatus);
+#endif
+    return (spiCommandStatus);
+}
 
 /*****************************************************************************/
 /* Function:    writeSpiCommand()                                            */

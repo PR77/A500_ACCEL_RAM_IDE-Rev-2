@@ -169,7 +169,7 @@ always @(negedge DS or negedge RESET) begin
         end
 
         // AutoConfig Read sequence. Here is where we publish the RAM and I/O port size and hardware attributes.
-       case (ADDRESS[7:1])
+        case (ADDRESS[7:1])
             'h00: begin
                 if ({configured[2:0] == 3'b000}) autoConfigData <= 4'hE;     // (00) FastRAM
                 if ({configured[2:0] == 3'b001}) autoConfigData <= 4'hC;     // (00) SPI
@@ -259,24 +259,27 @@ assign IO_PORT[1:0] = IOPORTData[1:0];
 // --- SPI Port Control
 
 reg SPIPortMOSI = 1'b0;
-reg SPIPortSCK = 1'b0; 
+reg SPIPortSCK = 1'b0;
+reg SPIPortCS = 1'b1;
 
 always @(negedge CPU_CLK or negedge RESET) begin
 
     if (RESET == 1'b0) begin
         SPIPortMOSI <= 1'h0;
         SPIPortSCK <= 1'h0;
+        SPIPortCS <= 1'h1;
     end else begin
 
         if ((SPI_RANGE == 1'b1) && (RW == 1'b0)) begin
-            SPIPortMOSI <= DATA[15];
+            SPIPortCS <= DATA[15];
+            SPIPortMOSI <= DATA[7];
             SPIPortSCK <= DATA[0];
         end
     end
 end
 
 // SPI Port arbitration
-assign SPI_CS = 1'b0;
+assign SPI_CS = SPIPortCS;
 assign SPI_MOSI = SPIPortMOSI;
 assign SPI_SCK = SPIPortSCK;
 
