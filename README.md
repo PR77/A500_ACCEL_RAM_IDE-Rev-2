@@ -27,6 +27,49 @@ Here is the performance overview at 30MHz:
 ... and at 40MHz:
 ![40 MHz](/Images/PerformanceOverview_40MHz.jpg)
 
+### BOM
+For those wanting to build their own hardware, here is the BOM;
+
+| Reference(s) | Value           | Footprint                                        |
+|--------------|-----------------|--------------------------------------------------|
+| C101         | 100nF           | Capacitors_SMD:C_0603                            |
+| C102         | 100nF           | Capacitors_SMD:C_0603                            |
+| C103         | 100nF           | Capacitors_SMD:C_0603                            |
+| C104         | 100nF           | Capacitors_SMD:C_0603                            |
+| C105         | 100nF           | Capacitors_SMD:C_0603                            |
+| C106         | 100nF           | Capacitors_SMD:C_0603                            |
+| C107         | 100nF           | Capacitors_SMD:C_0603                            |
+| C112         | 100nF           | Capacitors_SMD:C_0805_HandSoldering              |
+| C113         | 100nF           | Capacitors_SMD:C_0805_HandSoldering              |
+| C114         | 100nF           | Capacitors_SMD:C_0805_HandSoldering              | 
+| C201         | 100nF           | Capacitors_SMD:C_0805_HandSoldering              |
+| C202         | 100nF           | Capacitors_SMD:C_0805_HandSoldering              |
+| C203         | 100nF           | Capacitors_SMD:C_0805_HandSoldering              |
+| C204         | 100nF           | Capacitors_SMD:C_0805_HandSoldering              |
+| C205         | 100nF           | Capacitors_SMD:C_0805_HandSoldering              |
+| C206         | 100nF           | Capacitors_SMD:C_0805_HandSoldering              |
+| C207         | 100nF           | Capacitors_SMD:C_0805_HandSoldering              |
+| IDE_40       | CONN_02X20      | Pin_Headers:Pin_Header_Straight_2x20_Pitch2.54mm |
+| J1           | EXP             | Pin_Headers:Pin_Header_Straight_1x03_Pitch2.54mm |
+| JTAG1        | CONN_01X06      | Pin_Headers:Pin_Header_Straight_1x06_Pitch2.54mm |
+| LED201       | LED             | LEDs:LED_0805_HandSoldering                      |
+| R101         | R10K            | Resistors_SMD:R_0603                             |
+| R102         | R10K            | Resistors_SMD:R_0603                             |
+| R201         | 680R            | Resistors_SMD:R_0805_HandSoldering               |
+| U101         | 68000D          | Pin_Headers:Pin_Header_Straight_2x32_Pitch2.54mm |
+| U102         | MC68SEC000FN    | Housings_QFP:LQFP-64_14x14mm_Pitch0.8mm          |
+| U103         | XC95144XL-TQ100 | Housings_QFP:TQFP-100_14x14mm_Pitch0.5mm         |
+| U104         | AT25_EEPROM     | Housings_SOIC:SOIC-8_3.9x4.9mm_Pitch1.27mm       |
+| U105         | LM1117-3.3      | TO_SOT_Packages_SMD:SOT-223                      |
+| U201         | SRAM_512Ko      | Housings_DIP:DIP-32_W15.24mm_Socket              |
+| U202         | SRAM_512Ko      | Housings_DIP:DIP-32_W15.24mm_Socket              |
+| U203         | SRAM_512Ko      | Housings_DIP:DIP-32_W15.24mm_Socket              |
+| U204         | SRAM_512Ko      | Housings_DIP:DIP-32_W15.24mm_Socket              |
+| U205         | 74HCT245        | Housings_SOIC:SO-20_12.8x7.5mm_Pitch1.27mm       |
+| U206         | 74HCT245        | Housings_SOIC:SO-20_12.8x7.5mm_Pitch1.27mm       |
+| U207         | 74HCT245        | Housings_SOIC:SO-20_12.8x7.5mm_Pitch1.27mm       |
+| X101         | CXO_DIP14       | Oscillators:Oscillator_DIP-14                    |
+
 ### Known Issues And Pending Changes
 While populated and debugging Rev 2 naturally issues where found and better ideas came to mind. Also contributions from the Amiga community (http://eab.abime.net/showthread.php?t=89165). The following corrections / improvements are pending the next design iteration:
 
