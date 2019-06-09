@@ -41,7 +41,7 @@ For those wanting to build their own hardware, here is the BOM;
 | C107         | 100nF           | Capacitors_SMD:C_0603                            |
 | C112         | 100nF           | Capacitors_SMD:C_0805_HandSoldering              |
 | C113         | 100nF           | Capacitors_SMD:C_0805_HandSoldering              |
-| C114         | 100nF           | Capacitors_SMD:C_0805_HandSoldering              | 
+| C114         | 100nF           | Capacitors_SMD:C_0805_HandSoldering              |
 | C201         | 100nF           | Capacitors_SMD:C_0805_HandSoldering              |
 | C202         | 100nF           | Capacitors_SMD:C_0805_HandSoldering              |
 | C203         | 100nF           | Capacitors_SMD:C_0805_HandSoldering              |
@@ -69,6 +69,10 @@ For those wanting to build their own hardware, here is the BOM;
 | U206         | 74HCT245        | Housings_SOIC:SO-20_12.8x7.5mm_Pitch1.27mm       |
 | U207         | 74HCT245        | Housings_SOIC:SO-20_12.8x7.5mm_Pitch1.27mm       |
 | X101         | CXO_DIP14       | Oscillators:Oscillator_DIP-14                    |
+
+Regarding the CPU, I purchased from here (I get nothing from this. The parts I received were new and legitimate so I wanted to share the source);
+
+https://www.ebay.de/itm/MC68SEC000FU20-IC-MPU-M680X0-20MHZ-64QFP-NEW/311524970603?hash=item488855d06b:g:qe0AAOSwYIhWleGF
 
 ### Known Issues And Pending Changes
 While populated and debugging Rev 2 naturally issues where found and better ideas came to mind. Also contributions from the Amiga community (http://eab.abime.net/showthread.php?t=89165). The following corrections / improvements are pending the next design iteration:
