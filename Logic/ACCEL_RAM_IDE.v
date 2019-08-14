@@ -23,401 +23,255 @@
     Update for revision 3 of design.
 */
 
+
+
+
+
  module ACCEL_RAM_IDE(
+    input           MB_CLK,
+    input           CPU_CLK,
 
-    input RESET,
-    input MB_CLK,
-    input CPU_CLK,
-    
-    input CPU_AS,
-    output MB_AS,
-       
-    input MB_DTACK,
-    output CPU_DTACK,
-    
-    output reg MB_E_CLK,
-    input MB_VPA,    
-    output MB_VMA,
-        
-    input [2:0]	CPU_FC,
-    output [2:0] CPU_IPL,
-    input CPU_BR,
-    input CPU_BG,
-    input MB_BGAK,
-    output BERR,
-    output CPU_AVEC,
-    input RW,
-    input LDS,
-    input UDS,
-    input HALT,
-        
-    // IDE
-    output IDE_RW,
-    output [1:0] IDE_CS,
-    output IDE_RESET,
-    output IDE_READ,
-    output IDE_WRITE,
-    
-    // RAM
-    output [3:0] RAM_CS,
-    
-    // SPI
-    output SPI_CS,
-    output SPI_MOSI,
-    output SPI_SCK,
-    input SPI_MISO,
-    
-    // IO Port
-    output [1:0] IO_PORT,
-    
-    // SPARE
-    input SPARE_NO_CONNECT,
-    
-    // Address bus
-    input [23:1] ADDRESS,
-    
-    // Data bus
-    inout [15:0] DATA
+    input           CPU_AS_n,
+    output          MB_AS_n,
 
+    input           MB_DTACK_n,
+    output          CPU_DTACK_n,
+
+    input           RESET_n,
+
+    output reg      MB_E_CLK,
+    input           MB_VPA,
+    output          MB_VMA,
+
+    input   [2:0]   CPU_FC,
+    output  [2:0]   CPU_IPL,
+    input           CPU_BR,
+    input           CPU_BG,
+    input           MB_BGAK,
+    output          BERR,
+    output          CPU_AVEC,
+    input           RW,
+    input           LDS_n,
+    input           UDS_n,
+    input           HALT_n,
+
+    output          IDE_RW_n,
+    output  [1:0]   IDE_CS_n,
+    output          IDE_RESET_n,
+    output          IDE_READ_n,
+    output          IDE_WRITE_n,
+
+    output  [3:0]   RAM_CS_n,
+
+    output          SPI_CS_n,
+    output          SPI_MOSI,
+    output          SPI_SCK,
+    input           SPI_MISO,
+
+    output  [1:0]   IO_PORT,
+    input           SPARE_NO_CONNECT,
+
+    input   [23:1]  ADDRESS,
+    inout   [15:0]  DATA
     );
-    
+
 assign BERR = 1'bZ;
 assign CPU_AVEC = 1'bZ;
 assign CPU_IPL = 3'bZZZ;
 
-// --- AUTOCONFIG
+reg autoConfigDevice = 1'd0;
+wire autoConfigAddress = ADDRESS[23:16] == 8'hE8 && autoConfigDevice != 1'd1;
 
-reg [2:0] configured = 3'b000;
-reg [2:0] shutup = 3'b000;
-reg [2:0] allConfigured = 3'b000;
-reg [3:0] autoConfigData = 4'b0000;
-reg [7:0] autoConfigBaseFastRam = 8'b00000000;
-reg [7:0] autoConfigBaseSPI = 8'b00000000;
-reg [7:0] autoConfigBaseIOPort = 8'b00000000;
+reg [7:0] fastRamBase = 8'h0;
+reg fastRamBaseValid = 1'b0;
+wire fastRamAddress = ADDRESS[23:20] == fastRamBase[7:4] && fastRamBaseValid;
 
-wire DS = (LDS & UDS);
+wire internalAddress = autoConfigAddress || fastRamAddress;
 
-wire AUTOCONFIG_RANGE = ({ADDRESS[23:16]} == {8'hE8}) && ~CPU_AS && ~&allConfigured;
+reg [1:0] extraRamCsDrive = 2'b11;
 
-wire IDE_RANGE = ({ADDRESS[23:16]} == {8'hEF}) && ~CPU_AS && ~DS;
-wire FASTRAM_RANGE = ({ADDRESS[23:20]} == {autoConfigBaseFastRam[7:4]}) && ~CPU_AS && ~DS && configured[0];
-wire SPI_RANGE = ({ADDRESS[23:16]} == {autoConfigBaseSPI[7:0]}) && ~CPU_AS && ~DS && configured[1];
-wire IOPORT_RANGE = ({ADDRESS[23:16]} == {autoConfigBaseIOPort[7:0]}) && ~CPU_AS && ~DS && configured[2];
+assign RAM_CS_n[3:2] = 2'b11;
+assign RAM_CS_n[1:0] = extraRamCsDrive & (!CPU_AS_n && fastRamAddress ? {UDS_n, LDS_n} : 2'b11);
 
-// Create allConfigured array based on "configured" and "shutup" status'.
-always @(posedge CPU_AS or negedge RESET) begin
+reg mbAsReq = 1'b0;
+reg mbAsAck = 1'b0;
+assign MB_AS_n = !(mbAsReq != mbAsAck);
 
-    if (RESET == 1'b0) begin
-        allConfigured <= 3'b000;
+// Acknowledge an internal (FastRAM, AutoConfig) data transfer.
+reg internalDtackReq = 1'b0;
+reg internalDtackAck = 1'b0;
+wire internalDtack = internalDtackReq != internalDtackAck;
+
+// Acknowledge an external data transfer.
+reg externalDtackReq = 1'b0;
+reg externalDtackAck = 1'b0;
+wire externalDtack = externalDtackReq != externalDtackAck;
+
+// Acknowledge a MC6800 emulation transfer.
+reg mc6800DtackReq = 1'b0;
+reg mc6800DtackAck = 1'b0;
+wire mc6800Dtack = mc6800DtackReq != mc6800DtackAck;
+
+assign CPU_DTACK_n = !(internalDtack || externalDtack || mc6800Dtack);
+
+reg [1:0] internalCycleCounter = 2'd0;
+reg [1:0] externalCycleCounter = 2'd0;
+
+reg externalAccessReq = 1'b0;
+reg externalAccessAck = 1'b0;
+
+reg driveAutoConfigData = 1'b0;
+reg [3:0] autoConfigData = 4'd0;
+assign DATA[15:12] = driveAutoConfigData && !CPU_AS_n ? autoConfigData : 4'bZZZZ;
+
+MC6800_EMULATION MC6800(
+
+    .RESET          (RESET),
+    .MB_CLK         (MB_CLK),
+    .CPU_CLK        (CPU_CLK),
     
-    end else begin
+    .CPU_AS         (CPU_AS),
+       
+    .MC6800_DTACK   (mc6800DtackReq),
     
-        allConfigured <= (configured | shutup);
-    end
-end
-
-// AUTOCONFIG cycle.
-always @(negedge DS or negedge RESET) begin
-
-    // Use DS as the entry point to keep this out of a specific clock domain.
-
-    if (RESET == 1'b0) begin
-        configured[2:0] <= 3'b000; 
-        shutup[2:0] <= 3'b000;
-        autoConfigData[3:0] <= 4'b1111;
-        autoConfigBaseFastRam[7:0] <= 8'b00000000;
-        autoConfigBaseSPI[7:0] <= 8'b00000000;
-        autoConfigBaseIOPort[7:0] <= 8'b00000000;
-    end else begin
-
-       if (AUTOCONFIG_RANGE == 1'b1 && RW == 1'b0) begin
-            // AutoConfig Write sequence. Here is where we receive from the OS the base address for the RAM.
-            case (ADDRESS[7:1])
-                'h24: begin
-                // Written second
-                    if (configured[2:0] == 3'b000) begin
-                        autoConfigBaseFastRam[7:4] <= DATA[15:12];      // FastRAM
-                        configured[0] <= 1'b1;
-                    end
-                    
-                    if (configured[2:0] == 3'b001) begin
-                        autoConfigBaseSPI[7:4] <= DATA[15:12];          // SPI
-                        configured[1] <= 1'b1;
-                    end
-                    
-                    if (configured[2:0] == 3'b011) begin
-                        autoConfigBaseIOPort[7:4] <= DATA[15:12];       // IO Port
-                        configured[2] <= 1'b1;
-                    end
-                end
-
-                'h25: begin
-                // Written first
-                    if ({configured[2:0] == 3'b000}) autoConfigBaseFastRam[3:0] <= DATA[15:12]; // FastRAM
-                    if ({configured[2:0] == 3'b001}) autoConfigBaseSPI[3:0] <= DATA[15:12];     // SPI
-                    if ({configured[2:0] == 3'b011}) autoConfigBaseIOPort[3:0] <= DATA[15:12];  // IO Port
-                end
-
-                'h26: begin
-                // Written asynchronously if the KS decides to not configure a specific device
-                    if ({configured[2:0] == 3'b000}) shutup[0] <= 1'b1;   // FastRAM
-                    if ({configured[2:0] == 3'b001}) shutup[1] <= 1'b1;   // SPI
-                    if ({configured[2:0] == 3'b011}) shutup[2] <= 1'b1;   // IO Port B
-                end
-                
-            endcase
-        end
-
-        // AutoConfig Read sequence. Here is where we publish the RAM and I/O port size and hardware attributes.
-        case (ADDRESS[7:1])
-            'h00: begin
-                if ({configured[2:0] == 3'b000}) autoConfigData <= 4'hE;     // (00) FastRAM
-                if ({configured[2:0] == 3'b001}) autoConfigData <= 4'hC;     // (00) SPI
-                if ({configured[2:0] == 3'b011}) autoConfigData <= 4'hC;     // (00) IO Port
-            end
-            
-            'h01: begin
-                if ({configured[2:0] == 3'b000}) autoConfigData <= 4'h5;     // (02) FastRAM
-                if ({configured[2:0] == 3'b001}) autoConfigData <= 4'h1;     // (02) SPI
-                if ({configured[2:0] == 3'b011}) autoConfigData <= 4'h1;     // (02) IO Port
-            end
-            
-            'h02: autoConfigData <= 4'h9;     // (04)  
-            
-            'h03: begin
-                if ({configured[2:0]} == {3'b000}) autoConfigData <= 4'h8;     // (06) FastRAM
-                if ({configured[2:0]} == {3'b001}) autoConfigData <= 4'h9;     // (06) SPI
-                if ({configured[2:0]} == {3'b011}) autoConfigData <= 4'hA;     // (06) IO Port
-            end
-            
-            'h04: autoConfigData <= 4'h7;  // (08/0A)
-            'h05: autoConfigData <= 4'hF;
-            
-            'h06: autoConfigData <= 4'hF;  // (0C/0E)
-            'h07: autoConfigData <= 4'hF;
-            
-            'h08: autoConfigData <= 4'hF;  // (10/12)
-            'h09: autoConfigData <= 4'h8;
-            'h0A: autoConfigData <= 4'h4;  // (14/16)
-            'h0B: autoConfigData <= 4'h6;                
-            
-            'h0C: autoConfigData <= 4'hA;  // (18/1A)
-            'h0D: autoConfigData <= 4'hF;
-            'h0E: autoConfigData <= 4'hB;  // (1C/1E)
-            'h0F: autoConfigData <= 4'hE;
-            'h10: autoConfigData <= 4'hA;  // (20/22)
-            'h11: autoConfigData <= 4'hA;
-            'h12: autoConfigData <= 4'hB;  // (24/26)
-            'h13: autoConfigData <= 4'h3;
-
-            default: 
-                autoConfigData <= 4'hF;
-
-        endcase
-    end
-end
-
-// Output specific AUTOCONFIG data.
-assign DATA[15:0] = (AUTOCONFIG_RANGE == 1'b1 && RW == 1'b1 && ~DS && ~&allConfigured) ? {autoConfigData[3:0], 12'bZZZZZZZZZZZZ} :
-                    (SPI_RANGE == 1'b1 && RW == 1'b1) ? {15'bZZZZZZZZZZZZZZZ, SPI_MISO} : 16'bZZZZZZZZZZZZZZZZ;
-
-// --- RAM Control
-
-// RAM control arbitration.
-assign RAM_CS[3:0] = FASTRAM_RANGE ? {1'b1, 1'b1, UDS, LDS} : {1'b1, 1'b1, 1'b1, 1'b1};
-
-// --- IDE Control
-
-// IDE Port arbitrations.
-assign IDE_CS[1:0] = ADDRESS[12] ? {~IDE_RANGE, 1'b1} : {1'b1, ~IDE_RANGE};
-assign IDE_RESET = RESET;
-assign IDE_READ = ((IDE_RANGE == 1'b1) && (RW == 1'b1)) ? 1'b0 : 1'b1;
-assign IDE_WRITE = ((IDE_RANGE == 1'b1) && (RW == 1'b0)) ? 1'b0 : 1'b1;
-
-// 74HCT245 Direction Control. HIGH: A(in) = B(out), LOW: B(in) = A(out).
-assign IDE_RW = (IDE_READ == 1'b0) ? 1'b0 : 1'b1;
-
-// --- IO Port Control
-
-reg [1:0] IOPORTData = 2'h0;
-
-// Latch D[15:14] to local IO Port Register during rising edge to S6.
-always @(negedge CPU_CLK or negedge RESET) begin
-
-    if (RESET == 1'b0) begin
-        IOPORTData[1:0] <= 2'h0;
-    end else begin
-
-        if ((IOPORT_RANGE == 1'b1) && (RW == 1'b0))
-            IOPORTData[1:0] <= DATA[15:14];
-    end
-end
-
-// IO Port arbitrations.
-assign IO_PORT[1:0] = IOPORTData[1:0];
-
-// --- SPI Port Control
-
-reg SPIPortMOSI = 1'b0;
-reg SPIPortSCK = 1'b0;
-reg SPIPortCS = 1'b1;
-
-always @(negedge CPU_CLK or negedge RESET) begin
-
-    if (RESET == 1'b0) begin
-        SPIPortMOSI <= 1'h0;
-        SPIPortSCK <= 1'h0;
-        SPIPortCS <= 1'h1;
-    end else begin
-
-        if ((SPI_RANGE == 1'b1) && (RW == 1'b0)) begin
-            SPIPortCS <= DATA[15];
-            SPIPortMOSI <= DATA[7];
-            SPIPortSCK <= DATA[0];
-        end
-    end
-end
-
-// SPI Port arbitration
-assign SPI_CS = SPIPortCS;
-assign SPI_MOSI = SPIPortMOSI;
-assign SPI_SCK = SPIPortSCK;
-
-// --- MC6800 Emulator --- Credit to TerribleFire for all the help with this
-
-reg [3:0] eClockRingCounter = 4'h4;
-reg MC6800VMA = 1'b1;
-reg MC6800DTACK = 1'b1;
-
-wire CPUSPACE = &CPU_FC;
-
-// Let's get the 709379 Hz E_CLOCK out the way by creating it from the motherboard base 7MHz Clock.
-always @(posedge MB_CLK) begin
-    
-    if (eClockRingCounter == 'd9) begin
-        eClockRingCounter <= 'd0;
+    .MB_E_CLK       (MB_E_CLK),
+    .MB_VPA         (MB_VPA),    
+    .MB_VMA         (MB_VMA),
         
-    end else begin
-    
-        eClockRingCounter <= eClockRingCounter + 'd1;
+    .CPU_FC         (CPU_FC)
+);
 
-        if (eClockRingCounter == 'd4) begin
-            MB_E_CLK <= 'b1;       
-        end
+always @(negedge CPU_AS_n)
+begin
+    if (!internalAddress)
+        externalAccessReq <= !externalAccessAck;
+end
 
-        if (eClockRingCounter == 'd8) begin
-            MB_E_CLK <= 'b0;
-        end
+always @(posedge CPU_AS_n)
+begin
+    mbAsAck <= mbAsReq;
+    internalDtackAck <= internalDtackReq;
+    externalDtackAck <= externalDtackReq;
+    mc6800DtackAck <= mc6800DtackReq;
+end
+
+always @(negedge CPU_CLK)
+begin
+    if (internalCycleCounter == 2'd0)
+    begin
+        if (!CPU_AS_n && internalAddress)
+            internalCycleCounter <= 2'd1;
+    end
+    else
+        internalCycleCounter <= internalCycleCounter + 2'd1;
+end
+
+always @(posedge CPU_CLK)
+begin
+    if (internalCycleCounter == 2'd1)
+    begin
+        internalDtackReq <= (!internalDtackAck);
+    end
+    else if (internalCycleCounter == 2'd2)
+    begin
+        if (fastRamAddress && !RW)
+            extraRamCsDrive <= {UDS_n, LDS_n};
+    end
+    else if (internalCycleCounter == 2'd3)
+    begin
+        extraRamCsDrive <= 2'b11;
     end
 end
 
-// Determine if current Bus Cycle is a 6800 type where VPA has been asserted.
-always @(posedge MB_CLK or posedge MB_VPA) begin
-
-    if (RESET == 1'b0) begin
-        MC6800VMA <= 1'b1;
-    end
-
-    if (MB_VPA == 1'b1) begin
-        MC6800VMA <= 1'b1;
-    end else begin
-
-        if (eClockRingCounter == 'd9) begin
-            MC6800VMA <= 1'b1;
-        end
-
-        if (eClockRingCounter == 'd2) begin
-            MC6800VMA <= MB_VPA | CPUSPACE;
-        end
+always @(posedge MB_CLK)
+begin
+    if (externalCycleCounter == 2'd0 && externalAccessReq != externalAccessAck)
+    begin
+        mbAsReq <= !mbAsAck;
+        externalAccessAck <= externalAccessReq;
     end
 end
 
-// Generate /DTACK if 6800 Bus Cycle has been emulated (generatedVMA).
-always @(posedge MB_CLK or posedge CPU_AS) begin
-    
-    if (RESET == 1'b0) begin
-        MC6800DTACK <= 1'b1;
+always @(negedge MB_CLK)
+begin
+    case (externalCycleCounter)
+    2'd0:
+        if (!MB_AS_n)
+            externalCycleCounter <= 2'd1;
+    2'd1:
+        if (!MB_DTACK_n)
+            externalCycleCounter <= 2'd2;
+    2'd2:
+    begin
+        externalDtackReq <= !externalDtackAck;
+        externalCycleCounter <= 2'd3;
     end
-    
-    if (CPU_AS == 1'b1) begin
-        MC6800DTACK <= 1'b1;
-    end else begin
-               
-        if (eClockRingCounter == 'd9) begin
-            MC6800DTACK <= 1'b1;
-        end
-
-        if (eClockRingCounter == 'd8) begin
-            MC6800DTACK <= MC6800VMA;
-        end
-    end 
+    2'd3:
+        externalCycleCounter <= 2'd0;
+    endcase
 end
 
-assign MB_VMA = MC6800VMA;
+// Handle auto config access.
+always @(negedge CPU_CLK)
+begin
+    if (internalCycleCounter == 2'd1)
+    begin
+        if (autoConfigAddress)
+            if (RW) // Read
+            begin
+                driveAutoConfigData <= 1'b1;
+                if (ADDRESS[7:6] == 2'd0)
+                    case (ADDRESS[5:1])
+                        5'h00: autoConfigData <= 4'hE;  // (00) FastRAM
+                        5'h01: autoConfigData <= 4'h5;  // (02) FastRAM
 
-// --- Accelerator
+                        5'h02: autoConfigData <= 4'h9;  // (04)  
+                        5'h03: autoConfigData <= 4'h8;  // (06) FastRAM
 
-reg delayedMB_AS = 1'b1;
-reg delayedMB_DTACK = 1'b1;
-reg fastCPU_DTACK = 1'b1;
-reg slowCPU_DTACK = 1'b1;
+                        5'h04: autoConfigData <= 4'h7;  // (08/0A)
+                        5'h05: autoConfigData <= 4'hF;
+                        
+                        5'h06: autoConfigData <= 4'hF;  // (0C/0E)
+                        5'h07: autoConfigData <= 4'hF;
+                        
+                        5'h08: autoConfigData <= 4'hF;  // (10/12)
+                        5'h09: autoConfigData <= 4'h8;
+                        5'h0A: autoConfigData <= 4'h4;  // (14/16)
+                        5'h0B: autoConfigData <= 4'h6;                
+                        
+                        5'h0C: autoConfigData <= 4'hA;  // (18/1A)
+                        5'h0D: autoConfigData <= 4'hF;
+                        5'h0E: autoConfigData <= 4'hB;  // (1C/1E)
+                        5'h0F: autoConfigData <= 4'hE;
+                        5'h10: autoConfigData <= 4'hA;  // (20/22)
+                        5'h11: autoConfigData <= 4'hA;
+                        5'h12: autoConfigData <= 4'hB;  // (24/26)
+                        5'h13: autoConfigData <= 4'h3;
 
-reg [3:0] SLOW_DTACK_WAITSTATES = 4'b0000;
-
-// Shift /CPU_AS into the 7MHz clock domain gated by FASTRAM_RANGE | AUTOCONFIG_RANGE | IDE_RANGE
-// (MB_AS is not asserted during internal cycles). Delay /MB_DTACK by 1 7MHz clock cycle to sync
-// up to asynchronous CPU_CLK.
-always @(posedge MB_CLK or posedge CPU_AS) begin
-    
-    if (CPU_AS == 1'b1) begin
-        delayedMB_DTACK <= 1'b1;
-        delayedMB_AS <= 1'b1;
-    end else begin
-    
-        delayedMB_AS <= CPU_AS | FASTRAM_RANGE | AUTOCONFIG_RANGE | IDE_RANGE;
-        delayedMB_DTACK <= MB_DTACK;
-    end
-end
-
-// Generate a slow DTACK for slow interal space resources.
-always @(posedge CPU_CLK or posedge CPU_AS) begin
-    
-    if (CPU_AS == 1'b1) begin
-        SLOW_DTACK_WAITSTATES <= 4'b0000;
-        slowCPU_DTACK <= 1'b1;
-    end else begin
-    
-        if (IDE_RANGE == 1'b1 || AUTOCONFIG_RANGE == 1'b1) begin
-            SLOW_DTACK_WAITSTATES <= SLOW_DTACK_WAITSTATES + 1;
-            
-            if (&SLOW_DTACK_WAITSTATES) begin
-                slowCPU_DTACK <= 1'b0;
+                        default: autoConfigData <= 4'hF;
+                    endcase
+                else
+                    autoConfigData <= 4'hF;
             end
-        end
+            else    // Write
+            begin
+                if (ADDRESS[7:1] == 7'h24) // Written second
+                begin
+                    fastRamBase[7:4] <= DATA[15:12];
+                    fastRamBaseValid <= 1'b1;
+                    autoConfigDevice <= autoConfigDevice + 1'd1;
+                end
+                else if (ADDRESS[7:1] == 7'h25) // Written first
+                begin
+                    fastRamBase[3:0] <= DATA[15:12];
+                end
+                else if (ADDRESS[7:1] == 7'h26)
+                    autoConfigDevice <= autoConfigDevice + 1'd1;
+            end
     end
-end
-
-// Generate a fast DTACK for fast interal space resources.
-always @(posedge CPU_CLK or posedge CPU_AS) begin
     
-    if (CPU_AS == 1'b1) begin
-        fastCPU_DTACK <= 1'b1;
-    end else begin
-    
-        fastCPU_DTACK <= ~FASTRAM_RANGE;
-               
-        // SPI_RANGE and IOPORT_RANGE are handled with slow /DTACKS via GARY.
-    end
+    else if (internalCycleCounter == 2'd3)
+        driveAutoConfigData <= 1'b0;
 end
-
-assign CPU_DTACK = (delayedMB_DTACK & fastCPU_DTACK & slowCPU_DTACK & MC6800DTACK);
-assign MB_AS = (MB_BGAK && HALT) ? delayedMB_AS : 1'bZ;
-
-// --- Debug
-
-/*
-assign IO_PORT[0] = AUTOCONFIG_RANGE;
-assign IO_PORT[1] = slowCPU_DTACK;
-*/
 
 endmodule
