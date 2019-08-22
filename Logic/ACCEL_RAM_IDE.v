@@ -39,7 +39,7 @@
 
     input           RESET_n,
 
-    output reg      MB_E_CLK,
+    output          MB_E_CLK,
     input           MB_VPA,
     output          MB_VMA,
 
@@ -110,6 +110,7 @@ wire externalDtack = externalDtackReq != externalDtackAck;
 // Acknowledge a MC6800 emulation transfer.
 reg mc6800DtackReq = 1'b0;
 reg mc6800DtackAck = 1'b0;
+wire mc6800DtackInt;
 wire mc6800Dtack = mc6800DtackReq != mc6800DtackAck;
 
 assign CPU_DTACK_n = !(internalDtack || externalDtack || mc6800Dtack);
@@ -132,7 +133,7 @@ MC6800_EMULATION MC6800(
     
     .CPU_AS         (CPU_AS),
        
-    .MC6800_DTACK   (mc6800DtackReq),
+    .MC6800_DTACK   (mc6800DtackInt),
     
     .MB_E_CLK       (MB_E_CLK),
     .MB_VPA         (MB_VPA),    
@@ -171,6 +172,7 @@ begin
     if (internalCycleCounter == 2'd1)
     begin
         internalDtackReq <= (!internalDtackAck);
+        mc6800DtackReq <= mc6800DtackInt;
     end
     else if (internalCycleCounter == 2'd2)
     begin

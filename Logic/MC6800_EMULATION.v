@@ -71,23 +71,24 @@ end
 always @(posedge MB_CLK or posedge CPU_AS) begin
     
     if (RESET == 1'b0) begin
-        MC6800_DTACK <= 1'b1;
+        MC6800DTACK <= 1'b1;
     end
     
     if (CPU_AS == 1'b1) begin
-        MC6800_DTACK <= 1'b1;
+        MC6800DTACK <= 1'b1;
     end else begin
                
         if (eClockRingCounter == 'd9) begin
-            MC6800_DTACK <= 1'b1;
+            MC6800DTACK <= 1'b1;
         end
 
         if (eClockRingCounter == 'd8) begin
-            MC6800_DTACK <= MC6800VMA;
+            MC6800DTACK <= MC6800VMA;
         end
     end 
 end
 
 assign MB_VMA = MC6800VMA;
+assign MC6800_DTACK = MC6800DTACK;
 
 endmodule
