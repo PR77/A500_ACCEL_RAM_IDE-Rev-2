@@ -23,10 +23,6 @@
     Update for revision 3 of design.
 */
 
-
-
-
-
  module ACCEL_RAM_IDE(
     input           MB_CLK,
     input           CPU_CLK,
@@ -79,28 +75,28 @@ assign BERR = 1'bZ;
 assign CPU_AVEC = 1'bZ;
 assign CPU_IPL = 3'bZZZ;
 
-reg autoConfigDevice = 1'd0;
-wire autoConfigAddress = ADDRESS[23:16] == 8'hE8 && autoConfigDevice != 1'd1;
+//reg autoConfigDevice = 1'd0;
+//wire autoConfigAddress = ADDRESS[23:16] == 8'hE8 && autoConfigDevice != 1'd1;
 
-reg [7:0] fastRamBase = 8'h0;
-reg fastRamBaseValid = 1'b0;
-wire fastRamAddress = ADDRESS[23:20] == fastRamBase[7:4] && fastRamBaseValid;
+//reg [7:0] fastRamBase = 8'h0;
+//reg fastRamBaseValid = 1'b0;
+//wire fastRamAddress = ADDRESS[23:20] == fastRamBase[7:4] && fastRamBaseValid;
 
-wire internalAddress = autoConfigAddress || fastRamAddress;
+wire internalAddress = 1'b0; /*autoConfigAddress || fastRamAddress;*/
 
-reg [1:0] extraRamCsDrive = 2'b11;
+//reg [1:0] extraRamCsDrive = 2'b11;
 
-assign RAM_CS_n[3:2] = 2'b11;
-assign RAM_CS_n[1:0] = extraRamCsDrive & (!CPU_AS_n && fastRamAddress ? {UDS_n, LDS_n} : 2'b11);
+//assign RAM_CS_n[3:2] = 2'b11;
+//assign RAM_CS_n[1:0] = extraRamCsDrive & (!CPU_AS_n && fastRamAddress ? {UDS_n, LDS_n} : 2'b11);
 
 reg mbAsReq = 1'b0;
 reg mbAsAck = 1'b0;
 assign MB_AS_n = !(mbAsReq != mbAsAck);
 
 // Acknowledge an internal (FastRAM, AutoConfig) data transfer.
-reg internalDtackReq = 1'b0;
-reg internalDtackAck = 1'b0;
-wire internalDtack = internalDtackReq != internalDtackAck;
+//reg internalDtackReq = 1'b0;
+//reg internalDtackAck = 1'b0;
+//wire internalDtack = internalDtackReq != internalDtackAck;
 
 // Acknowledge an external data transfer.
 reg externalDtackReq = 1'b0;
@@ -113,7 +109,7 @@ reg mc6800DtackAck = 1'b0;
 wire mc6800DtackInt;
 wire mc6800Dtack = mc6800DtackReq != mc6800DtackAck;
 
-assign CPU_DTACK_n = !(internalDtack || externalDtack || mc6800Dtack);
+assign CPU_DTACK_n = !(/*internalDtack || */externalDtack || mc6800Dtack);
 
 reg [1:0] internalCycleCounter = 2'd0;
 reg [1:0] externalCycleCounter = 2'd0;
@@ -121,17 +117,17 @@ reg [1:0] externalCycleCounter = 2'd0;
 reg externalAccessReq = 1'b0;
 reg externalAccessAck = 1'b0;
 
-reg driveAutoConfigData = 1'b0;
-reg [3:0] autoConfigData = 4'd0;
-assign DATA[15:12] = driveAutoConfigData && !CPU_AS_n ? autoConfigData : 4'bZZZZ;
+//reg driveAutoConfigData = 1'b0;
+//reg [3:0] autoConfigData = 4'd0;
+//assign DATA[15:12] = driveAutoConfigData && !CPU_AS_n ? autoConfigData : 4'bZZZZ;
 
 MC6800_EMULATION MC6800(
 
-    .RESET          (RESET),
+    .RESET          (RESET_n),
     .MB_CLK         (MB_CLK),
     .CPU_CLK        (CPU_CLK),
     
-    .CPU_AS         (CPU_AS),
+    .CPU_AS         (CPU_AS_n),
        
     .MC6800_DTACK   (mc6800DtackInt),
     
@@ -142,22 +138,30 @@ MC6800_EMULATION MC6800(
     .CPU_FC         (CPU_FC)
 );
 
-always @(negedge CPU_AS_n)
+wire addressStrobe = !CPU_AS_n && RESET_n;
+
+always @(posedge addressStrobe)
 begin
     if (!internalAddress)
         externalAccessReq <= !externalAccessAck;
 end
 
-always @(posedge CPU_AS_n)
+always @(negedge addressStrobe)
 begin
     mbAsAck <= mbAsReq;
-    internalDtackAck <= internalDtackReq;
+//    internalDtackAck <= internalDtackReq;
     externalDtackAck <= externalDtackReq;
     mc6800DtackAck <= mc6800DtackReq;
 end
 
 always @(negedge CPU_CLK)
 begin
+
+    if (RESET_n == 1'b0)
+    begin
+        internalCycleCounter <= 2'd0;
+    end else begin
+
     if (internalCycleCounter == 2'd0)
     begin
         if (!CPU_AS_n && internalAddress)
@@ -165,24 +169,25 @@ begin
     end
     else
         internalCycleCounter <= internalCycleCounter + 2'd1;
+    end
 end
 
 always @(posedge CPU_CLK)
 begin
     if (internalCycleCounter == 2'd1)
     begin
-        internalDtackReq <= (!internalDtackAck);
+//        internalDtackReq <= (!internalDtackAck);
         mc6800DtackReq <= mc6800DtackInt;
     end
-    else if (internalCycleCounter == 2'd2)
-    begin
-        if (fastRamAddress && !RW)
-            extraRamCsDrive <= {UDS_n, LDS_n};
-    end
-    else if (internalCycleCounter == 2'd3)
-    begin
-        extraRamCsDrive <= 2'b11;
-    end
+//    else if (internalCycleCounter == 2'd2)
+//    begin
+//        if (fastRamAddress && !RW)
+//            extraRamCsDrive <= {UDS_n, LDS_n};
+//    end
+//    else if (internalCycleCounter == 2'd3)
+//    begin
+//        extraRamCsDrive <= 2'b11;
+//    end
 end
 
 always @(posedge MB_CLK)
@@ -196,24 +201,32 @@ end
 
 always @(negedge MB_CLK)
 begin
-    case (externalCycleCounter)
-    2'd0:
-        if (!MB_AS_n)
-            externalCycleCounter <= 2'd1;
-    2'd1:
-        if (!MB_DTACK_n)
-            externalCycleCounter <= 2'd2;
-    2'd2:
+
+    if (RESET_n == 1'b0)
     begin
-        externalDtackReq <= !externalDtackAck;
-        externalCycleCounter <= 2'd3;
-    end
-    2'd3:
         externalCycleCounter <= 2'd0;
-    endcase
+    end else begin
+
+        case (externalCycleCounter)
+        2'd0:
+            if (!MB_AS_n)
+                externalCycleCounter <= 2'd1;
+        2'd1:
+            if (!MB_DTACK_n)
+                externalCycleCounter <= 2'd2;
+        2'd2:
+        begin
+            externalDtackReq <= !externalDtackAck;
+            externalCycleCounter <= 2'd3;
+        end
+        2'd3:
+            externalCycleCounter <= 2'd0;
+        endcase
+    end
 end
 
 // Handle auto config access.
+/*
 always @(negedge CPU_CLK)
 begin
     if (internalCycleCounter == 2'd1)
@@ -275,5 +288,9 @@ begin
     else if (internalCycleCounter == 2'd3)
         driveAutoConfigData <= 1'b0;
 end
+*/
+
+assign IO_PORT[0] = CPU_DTACK_n;
+assign IO_PORT[1] = CPU_AS_n;
 
 endmodule
