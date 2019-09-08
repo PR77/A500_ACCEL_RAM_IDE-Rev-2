@@ -376,7 +376,7 @@ always @(posedge MB_CLK or posedge CPU_AS) begin
         delayedMB_AS <= 1'b1;
     end else begin
     
-        delayedMB_AS <= CPU_AS | FASTRAM_RANGE | (AUTOCONFIG_RANGE && ACCESS) | IDE_RANGE;
+        delayedMB_AS <= CPU_AS | FASTRAM_RANGE | AUTOCONFIG_RANGE | IDE_RANGE;
         delayedMB_DTACK <= MB_DTACK;
     end
 end
@@ -389,7 +389,7 @@ always @(posedge CPU_CLK or posedge CPU_AS) begin
         slowCPU_DTACK <= 1'b1;
     end else begin
     
-        if (IDE_RANGE == 1'b1 || (AUTOCONFIG_RANGE && ACCESS)) begin
+        if (IDE_RANGE == 1'b1 || AUTOCONFIG_RANGE == 1'b1) begin
             SLOW_DTACK_WAITSTATES <= SLOW_DTACK_WAITSTATES + 1;
             
             if (&SLOW_DTACK_WAITSTATES) begin
