@@ -98,11 +98,11 @@ reg [7:0] autoConfigBaseIOPort = 8'b00000000;
 wire DS = (LDS & UDS);
 wire ACCESS = (!CPU_AS && !DS && RESET);
 
-wire AUTOCONFIG_RANGE = ({ADDRESS[23:16]} == {8'hE8}) && ACCESS && ~&allConfigured;
-wire IDE_RANGE = ({ADDRESS[23:16]} == {8'hEF}) && ACCESS;
-wire FASTRAM_RANGE = ({ADDRESS[23:20]} == {autoConfigBaseFastRam[7:4]}) && ACCESS && configured[0];
-wire SPI_RANGE = ({ADDRESS[23:16]} == {autoConfigBaseSPI[7:0]}) && ACCESS && configured[1];
-wire IOPORT_RANGE = ({ADDRESS[23:16]} == {autoConfigBaseIOPort[7:0]}) && ACCESS && configured[2];
+wire AUTOCONFIG_RANGE = ({ADDRESS[23:16]} == {8'hE8}) && ~&allConfigured;
+wire IDE_RANGE = ({ADDRESS[23:16]} == {8'hEF});
+wire FASTRAM_RANGE = ({ADDRESS[23:20]} == {autoConfigBaseFastRam[7:4]}) && configured[0];
+wire SPI_RANGE = ({ADDRESS[23:16]} == {autoConfigBaseSPI[7:0]}) && configured[1];
+wire IOPORT_RANGE = ({ADDRESS[23:16]} == {autoConfigBaseIOPort[7:0]}) && configured[2];
 
 // Create allConfigured array based on "configured" and "shutup" status'.
 always @(negedge ACCESS or negedge RESET) begin
@@ -218,8 +218,8 @@ always @(posedge ACCESS or negedge RESET) begin
 end
 
 // Output specific AUTOCONFIG data.
-assign DATA[15:0] = (AUTOCONFIG_RANGE == 1'b1 && RW == 1'b1 && ~&allConfigured) ? {autoConfigData[3:0], 12'bZZZZZZZZZZZZ} :
-                    (SPI_RANGE == 1'b1 && RW == 1'b1) ? {15'bZZZZZZZZZZZZZZZ, SPI_MISO} : 16'bZZZZZZZZZZZZZZZZ;
+assign DATA[15:0] = (AUTOCONFIG_RANGE == 1'b1 && ACCESS && RW == 1'b1 && ~&allConfigured) ? {autoConfigData[3:0], 12'bZZZZZZZZZZZZ} :
+                    (SPI_RANGE == 1'b1 && ACCESS && RW == 1'b1) ? {15'bZZZZZZZZZZZZZZZ, SPI_MISO} : 16'bZZZZZZZZZZZZZZZZ;
 
 // --- RAM Control
 
@@ -389,7 +389,7 @@ always @(posedge CPU_CLK or posedge CPU_AS) begin
         slowCPU_DTACK <= 1'b1;
     end else begin
     
-        if (IDE_RANGE == 1'b1 || AUTOCONFIG_RANGE == 1'b1) begin
+        if ((IDE_RANGE == 1'b1 || AUTOCONFIG_RANGE == 1'b1) && ACCESS) begin
             SLOW_DTACK_WAITSTATES <= SLOW_DTACK_WAITSTATES + 1;
             
             if (&SLOW_DTACK_WAITSTATES) begin
@@ -407,7 +407,7 @@ always @(posedge CPU_CLK or posedge CPU_AS) begin
         fastCPU_DTACK <= 1'b1;
     end else begin
 
-        if (FASTRAM_RANGE == 1'b1) begin
+        if ((FASTRAM_RANGE == 1'b1) && ACCESS) begin
             FAST_DTACK_WAITSTATES <= FAST_DTACK_WAITSTATES + 1;
             
             if (FAST_DTACK_WAITSTATES == 2'd2) begin
