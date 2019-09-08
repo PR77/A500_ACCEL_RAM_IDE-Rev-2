@@ -23,7 +23,7 @@
     Update for revision 3 of design.
 */
 
- module ACCEL_RAM_IDE(
+module ACCEL_RAM_IDE(
 
     input RESET,
     input MB_CLK,
@@ -96,16 +96,16 @@ reg [7:0] autoConfigBaseSPI = 8'b00000000;
 reg [7:0] autoConfigBaseIOPort = 8'b00000000;
 
 wire DS = (LDS & UDS);
+wire ACCESS = (!CPU_AS && !DS && RESET);
 
-wire AUTOCONFIG_RANGE = ({ADDRESS[23:16]} == {8'hE8}) && ~CPU_AS && ~&allConfigured;
-
-wire IDE_RANGE = ({ADDRESS[23:16]} == {8'hEF}) && ~CPU_AS && ~DS;
-wire FASTRAM_RANGE = ({ADDRESS[23:20]} == {autoConfigBaseFastRam[7:4]}) && ~CPU_AS && ~DS && configured[0];
-wire SPI_RANGE = ({ADDRESS[23:16]} == {autoConfigBaseSPI[7:0]}) && ~CPU_AS && ~DS && configured[1];
-wire IOPORT_RANGE = ({ADDRESS[23:16]} == {autoConfigBaseIOPort[7:0]}) && ~CPU_AS && ~DS && configured[2];
+wire AUTOCONFIG_RANGE = ({ADDRESS[23:16]} == {8'hE8}) && ACCESS && ~&allConfigured;
+wire IDE_RANGE = ({ADDRESS[23:16]} == {8'hEF}) && ACCESS;
+wire FASTRAM_RANGE = ({ADDRESS[23:20]} == {autoConfigBaseFastRam[7:4]}) && ACCESS && configured[0];
+wire SPI_RANGE = ({ADDRESS[23:16]} == {autoConfigBaseSPI[7:0]}) && ACCESS && configured[1];
+wire IOPORT_RANGE = ({ADDRESS[23:16]} == {autoConfigBaseIOPort[7:0]}) && ACCESS && configured[2];
 
 // Create allConfigured array based on "configured" and "shutup" status'.
-always @(posedge CPU_AS or negedge RESET) begin
+always @(negedge ACCESS or negedge RESET) begin
 
     if (RESET == 1'b0) begin
         allConfigured <= 3'b000;
@@ -117,7 +117,7 @@ always @(posedge CPU_AS or negedge RESET) begin
 end
 
 // AUTOCONFIG cycle.
-always @(negedge DS or negedge RESET) begin
+always @(posedge ACCESS or negedge RESET) begin
 
     // Use DS as the entry point to keep this out of a specific clock domain.
 
@@ -218,7 +218,7 @@ always @(negedge DS or negedge RESET) begin
 end
 
 // Output specific AUTOCONFIG data.
-assign DATA[15:0] = (AUTOCONFIG_RANGE == 1'b1 && RW == 1'b1 && ~DS && ~&allConfigured) ? {autoConfigData[3:0], 12'bZZZZZZZZZZZZ} :
+assign DATA[15:0] = (AUTOCONFIG_RANGE == 1'b1 && RW == 1'b1 && ~&allConfigured) ? {autoConfigData[3:0], 12'bZZZZZZZZZZZZ} :
                     (SPI_RANGE == 1'b1 && RW == 1'b1) ? {15'bZZZZZZZZZZZZZZZ, SPI_MISO} : 16'bZZZZZZZZZZZZZZZZ;
 
 // --- RAM Control
@@ -241,14 +241,14 @@ assign IDE_RW = (IDE_READ == 1'b0) ? 1'b0 : 1'b1;
 
 reg [1:0] IOPORTData = 2'h0;
 
-// Latch D[15:14] to local IO Port Register during rising edge to S6.
-always @(negedge CPU_CLK or negedge RESET) begin
+// Latch D[15:14] to local IO Port Register during rising edge to S4.
+always @(posedge ACCESS or negedge RESET) begin
 
     if (RESET == 1'b0) begin
         IOPORTData[1:0] <= 2'h0;
     end else begin
 
-        if ((IOPORT_RANGE == 1'b1) && (RW == 1'b0))
+        if (IOPORT_RANGE == 1'b1 && RW == 1'b0)
             IOPORTData[1:0] <= DATA[15:14];
     end
 end
@@ -262,7 +262,8 @@ reg SPIPortMOSI = 1'b0;
 reg SPIPortSCK = 1'b0;
 reg SPIPortCS = 1'b1;
 
-always @(negedge CPU_CLK or negedge RESET) begin
+// Latch D[15, 7, 0] to local SPI Port Register during rising edge to S4.
+always @(posedge ACCESS or negedge RESET) begin
 
     if (RESET == 1'b0) begin
         SPIPortMOSI <= 1'h0;
@@ -270,7 +271,7 @@ always @(negedge CPU_CLK or negedge RESET) begin
         SPIPortCS <= 1'h1;
     end else begin
 
-        if ((SPI_RANGE == 1'b1) && (RW == 1'b0)) begin
+        if (SPI_RANGE == 1'b1 && RW == 1'b0) begin
             SPIPortCS <= DATA[15];
             SPIPortMOSI <= DATA[7];
             SPIPortSCK <= DATA[0];
@@ -363,6 +364,7 @@ reg fastCPU_DTACK = 1'b1;
 reg slowCPU_DTACK = 1'b1;
 
 reg [3:0] SLOW_DTACK_WAITSTATES = 4'b0000;
+reg [1:0] FAST_DTACK_WAITSTATES = 2'b00;
 
 // Shift /CPU_AS into the 7MHz clock domain gated by FASTRAM_RANGE | AUTOCONFIG_RANGE | IDE_RANGE
 // (MB_AS is not asserted during internal cycles). Delay /MB_DTACK by 1 7MHz clock cycle to sync
@@ -374,7 +376,7 @@ always @(posedge MB_CLK or posedge CPU_AS) begin
         delayedMB_AS <= 1'b1;
     end else begin
     
-        delayedMB_AS <= CPU_AS | FASTRAM_RANGE | AUTOCONFIG_RANGE | IDE_RANGE;
+        delayedMB_AS <= CPU_AS | FASTRAM_RANGE | (AUTOCONFIG_RANGE && ACCESS) | IDE_RANGE;
         delayedMB_DTACK <= MB_DTACK;
     end
 end
@@ -387,7 +389,7 @@ always @(posedge CPU_CLK or posedge CPU_AS) begin
         slowCPU_DTACK <= 1'b1;
     end else begin
     
-        if (IDE_RANGE == 1'b1 || AUTOCONFIG_RANGE == 1'b1) begin
+        if (IDE_RANGE == 1'b1 || (AUTOCONFIG_RANGE && ACCESS)) begin
             SLOW_DTACK_WAITSTATES <= SLOW_DTACK_WAITSTATES + 1;
             
             if (&SLOW_DTACK_WAITSTATES) begin
@@ -397,14 +399,21 @@ always @(posedge CPU_CLK or posedge CPU_AS) begin
     end
 end
 
-// Generate a fast DTACK for fast interal space resources.
+// Generate a fast DTACK for fast interal space resources. Currently set to 2 WS.
 always @(posedge CPU_CLK or posedge CPU_AS) begin
     
     if (CPU_AS == 1'b1) begin
+        FAST_DTACK_WAITSTATES <= 2'b00;
         fastCPU_DTACK <= 1'b1;
     end else begin
-    
-        fastCPU_DTACK <= ~FASTRAM_RANGE;
+
+        if (FASTRAM_RANGE == 1'b1) begin
+            FAST_DTACK_WAITSTATES <= FAST_DTACK_WAITSTATES + 1;
+            
+            if (FAST_DTACK_WAITSTATES == 2'd2) begin
+                fastCPU_DTACK <= 1'b0;
+            end
+        end
                
         // SPI_RANGE and IOPORT_RANGE are handled with slow /DTACKS via GARY.
     end
@@ -412,12 +421,5 @@ end
 
 assign CPU_DTACK = (delayedMB_DTACK & fastCPU_DTACK & slowCPU_DTACK & MC6800DTACK);
 assign MB_AS = (MB_BGAK && HALT) ? delayedMB_AS : 1'bZ;
-
-// --- Debug
-
-/*
-assign IO_PORT[0] = AUTOCONFIG_RANGE;
-assign IO_PORT[1] = slowCPU_DTACK;
-*/
 
 endmodule
