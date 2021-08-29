@@ -21,7 +21,12 @@
     
     Revision 0.1 - 03.07.2018
     Update for revision 3 of design.
+    
+    Revision 0.2 - 29.08.2021
+    Code clean up and bug fix improvements.
 */
+
+`define FASTRAM_SIZE_2MB
 
 module ACCEL_RAM_IDE(
 
@@ -81,6 +86,16 @@ module ACCEL_RAM_IDE(
 
     );
     
+// -- CONFIGURATION
+
+localparam [15:0] manufacturerId = 16'h07B9;
+localparam [7:0] productIdFastRAM = 8'd103;
+localparam [7:0] productIdSPI = 8'd102;
+localparam [7:0] productIdIOPort = 8'd101;
+localparam [31:0] serialNumber = 32'd29082021; // Revision date
+
+// --    
+    
 assign BERR = 1'bZ;
 assign CPU_AVEC = 1'bZ;
 assign CPU_IPL = 3'bZZZ;
@@ -100,7 +115,7 @@ wire ACCESS = (!CPU_AS && !DS && RESET);
 
 wire AUTOCONFIG_RANGE = ({ADDRESS[23:16]} == {8'hE8}) && ~&allConfigured;
 wire IDE_RANGE = ({ADDRESS[23:16]} == {8'hEF});
-wire FASTRAM_RANGE = ({ADDRESS[23:20]} == {autoConfigBaseFastRam[7:4]}) && configured[0];
+wire FASTRAM_RANGE = ({ADDRESS[23:21]} == {autoConfigBaseFastRam[7:5]}) && configured[0];
 wire SPI_RANGE = ({ADDRESS[23:16]} == {autoConfigBaseSPI[7:0]}) && configured[1];
 wire IOPORT_RANGE = ({ADDRESS[23:16]} == {autoConfigBaseIOPort[7:0]}) && configured[2];
 
@@ -177,17 +192,25 @@ always @(posedge ACCESS or negedge RESET) begin
             end
             
             'h01: begin
-                if ({configured[2:0] == 3'b000}) autoConfigData <= 4'h5;     // (02) FastRAM
+                `ifdef FASTRAM_SIZE_2MB 
+                    if ({configured[2:0] == 3'b000}) autoConfigData <= 4'h6;     // (02) FastRAM (2 MB)
+                `else
+                    if ({configured[2:0] == 3'b000}) autoConfigData <= 4'h5;     // (02) FastRAM (1 MB)
+                `endif
                 if ({configured[2:0] == 3'b001}) autoConfigData <= 4'h1;     // (02) SPI
                 if ({configured[2:0] == 3'b011}) autoConfigData <= 4'h1;     // (02) IO Port
             end
             
-            'h02: autoConfigData <= 4'h9;     // (04)  
+            'h02: begin
+                if ({configured[2:0]} == {3'b000}) autoConfigData <= ~productIdFastRAM[7:4];    // (04) FastRAM
+                if ({configured[2:0]} == {3'b001}) autoConfigData <= ~productIdSPI[7:4];        // (04) SPI
+                if ({configured[2:0]} == {3'b011}) autoConfigData <= ~productIdIOPort[7:4];     // (04) IO Port
+            end
             
             'h03: begin
-                if ({configured[2:0]} == {3'b000}) autoConfigData <= 4'h8;     // (06) FastRAM
-                if ({configured[2:0]} == {3'b001}) autoConfigData <= 4'h9;     // (06) SPI
-                if ({configured[2:0]} == {3'b011}) autoConfigData <= 4'hA;     // (06) IO Port
+                if ({configured[2:0]} == {3'b000}) autoConfigData <= ~productIdFastRAM[3:0];    // (06) FastRAM
+                if ({configured[2:0]} == {3'b001}) autoConfigData <= ~productIdSPI[3:0];        // (06) SPI
+                if ({configured[2:0]} == {3'b011}) autoConfigData <= ~productIdIOPort[3:0];     // (06) IO Port
             end
             
             'h04: autoConfigData <= 4'h7;  // (08/0A)
@@ -196,19 +219,19 @@ always @(posedge ACCESS or negedge RESET) begin
             'h06: autoConfigData <= 4'hF;  // (0C/0E)
             'h07: autoConfigData <= 4'hF;
             
-            'h08: autoConfigData <= 4'hF;  // (10/12)
-            'h09: autoConfigData <= 4'h8;
-            'h0A: autoConfigData <= 4'h4;  // (14/16)
-            'h0B: autoConfigData <= 4'h6;                
+            'h08: autoConfigData <= ~manufacturerId[15:12]; // (10/12)
+            'h09: autoConfigData <= ~manufacturerId[11:8];
+            'h0A: autoConfigData <= ~manufacturerId[7:4];   // (14/16)
+            'h0B: autoConfigData <= ~manufacturerId[3:0];                
             
-            'h0C: autoConfigData <= 4'hA;  // (18/1A)
-            'h0D: autoConfigData <= 4'hF;
-            'h0E: autoConfigData <= 4'hB;  // (1C/1E)
-            'h0F: autoConfigData <= 4'hE;
-            'h10: autoConfigData <= 4'hA;  // (20/22)
-            'h11: autoConfigData <= 4'hA;
-            'h12: autoConfigData <= 4'hB;  // (24/26)
-            'h13: autoConfigData <= 4'h3;
+            'h0C: autoConfigData <= ~serialNumber[31:28];   // (18/1A)
+            'h0D: autoConfigData <= ~serialNumber[27:24];
+            'h0E: autoConfigData <= ~serialNumber[23:20];   // (1C/1E)
+            'h0F: autoConfigData <= ~serialNumber[19:16];
+            'h10: autoConfigData <= ~serialNumber[15:12];   // (20/22)
+            'h11: autoConfigData <= ~serialNumber[11:8];
+            'h12: autoConfigData <= ~serialNumber[7:4];     // (24/26)
+            'h13: autoConfigData <= ~serialNumber[3:0];
 
             default: 
                 autoConfigData <= 4'hF;
@@ -224,15 +247,20 @@ assign DATA[15:0] = (AUTOCONFIG_RANGE == 1'b1 && ACCESS && RW == 1'b1 && ~&allCo
 // --- RAM Control
 
 // RAM control arbitration.
-assign RAM_CS[3:0] = FASTRAM_RANGE ? {1'b1, 1'b1, UDS, LDS} : {1'b1, 1'b1, 1'b1, 1'b1};
+wire RAM3_CS = (UDS == 1'b0) && (~ADDRESS[20]);
+wire RAM2_CS = (LDS == 1'b0) && (~ADDRESS[20]);
+wire RAM1_CS = (UDS == 1'b0) && (ADDRESS[20]);
+wire RAM0_CS = (LDS == 1'b0) && (ADDRESS[20]);
+
+assign RAM_CS[3:0] = FASTRAM_RANGE ? {~RAM3_CS, ~RAM2_CS, ~RAM1_CS, ~RAM0_CS} : {1'b1, 1'b1, 1'b1, 1'b1};
 
 // --- IDE Control
 
 // IDE Port arbitrations.
 assign IDE_CS[1:0] = ADDRESS[12] ? {~IDE_RANGE, 1'b1} : {1'b1, ~IDE_RANGE};
 assign IDE_RESET = RESET;
-assign IDE_READ = ((IDE_RANGE == 1'b1) && (RW == 1'b1)) ? 1'b0 : 1'b1;
-assign IDE_WRITE = ((IDE_RANGE == 1'b1) && (RW == 1'b0)) ? 1'b0 : 1'b1;
+assign IDE_READ = ((IDE_RANGE == 1'b1) && (RW == 1'b1) && ACCESS) ? 1'b0 : 1'b1;
+assign IDE_WRITE = ((IDE_RANGE == 1'b1) && (RW == 1'b0) && ACCESS) ? 1'b0 : 1'b1;
 
 // 74HCT245 Direction Control. HIGH: A(in) = B(out), LOW: B(in) = A(out).
 assign IDE_RW = (IDE_READ == 1'b0) ? 1'b0 : 1'b1;
@@ -364,7 +392,6 @@ reg fastCPU_DTACK = 1'b1;
 reg slowCPU_DTACK = 1'b1;
 
 reg [3:0] SLOW_DTACK_WAITSTATES = 4'b0000;
-reg [1:0] FAST_DTACK_WAITSTATES = 2'b00;
 
 // Shift /CPU_AS into the 7MHz clock domain gated by FASTRAM_RANGE | AUTOCONFIG_RANGE | IDE_RANGE
 // (MB_AS is not asserted during internal cycles). Delay /MB_DTACK by 1 7MHz clock cycle to sync
@@ -381,7 +408,7 @@ always @(posedge MB_CLK or posedge CPU_AS) begin
     end
 end
 
-// Generate a slow DTACK for slow interal space resources.
+// Generate a slow DTACK for slow internal space resources.
 always @(posedge CPU_CLK or posedge CPU_AS) begin
     
     if (CPU_AS == 1'b1) begin
@@ -403,17 +430,10 @@ end
 always @(posedge CPU_CLK or posedge CPU_AS) begin
     
     if (CPU_AS == 1'b1) begin
-        FAST_DTACK_WAITSTATES <= 2'b00;
         fastCPU_DTACK <= 1'b1;
     end else begin
 
-        if ((FASTRAM_RANGE == 1'b1) && ACCESS) begin
-            FAST_DTACK_WAITSTATES <= FAST_DTACK_WAITSTATES + 1;
-            
-            if (FAST_DTACK_WAITSTATES == 2'd2) begin
-                fastCPU_DTACK <= 1'b0;
-            end
-        end
+        fastCPU_DTACK <= ~FASTRAM_RANGE;
                
         // SPI_RANGE and IOPORT_RANGE are handled with slow /DTACKS via GARY.
     end
