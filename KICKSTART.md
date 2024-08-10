@@ -30,4 +30,5 @@ This will create a folder named after the ROM image and fill folder with the spl
 It is a good idea to use the -r command to bump the ROM REV version to the version of the `IDE.device` you are used, im my case I changed this to 40.258.
 
 Custom kickstart version as tested with WinUAE;
+
 ![Kickstart version](/Images/customKickstart.png)
