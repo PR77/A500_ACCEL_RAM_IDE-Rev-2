@@ -14,19 +14,16 @@
 <msg type="info" file="Cpld" num="0" delta="new" >Inferring BUFG constraint for signal &apos;<arg fmt="%s" index="1">MB_CLK</arg>&apos; based upon the LOC constraint &apos;<arg fmt="%s" index="2">P22</arg>&apos;. It is recommended that you declare this BUFG explicitedly in your design. Note that for certain device families the output of a BUFG constraint can not drive a gated clock, and the BUFG constraint will be ignored.
 </msg>
 
-<msg type="warning" file="Cpld" num="936" delta="old" >The output buffer &apos;<arg fmt="%s" index="1">SPI_SCK_OBUF</arg>&apos; is missing an input and will be deleted.
-</msg>
-
-<msg type="warning" file="Cpld" num="936" delta="old" >The output buffer &apos;<arg fmt="%s" index="1">SPI_MOSI_OBUF</arg>&apos; is missing an input and will be deleted.
-</msg>
-
-<msg type="warning" file="Cpld" num="936" delta="old" >The output buffer &apos;<arg fmt="%s" index="1">SPI_CS_OBUF</arg>&apos; is missing an input and will be deleted.
+<msg type="info" file="Cpld" num="0" delta="new" >Inferring BUFG constraint for signal &apos;<arg fmt="%s" index="1">CPU_BG</arg>&apos; based upon the LOC constraint &apos;<arg fmt="%s" index="2">P27</arg>&apos;. It is recommended that you declare this BUFG explicitedly in your design. Note that for certain device families the output of a BUFG constraint can not drive a gated clock, and the BUFG constraint will be ignored.
 </msg>
 
 <msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">ADDRESS&lt;10&gt;</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
 </msg>
 
 <msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">ADDRESS&lt;11&gt;</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
+</msg>
+
+<msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">ADDRESS&lt;13&gt;</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
 </msg>
 
 <msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">ADDRESS&lt;14&gt;</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
@@ -41,49 +38,25 @@
 <msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">ADDRESS&lt;9&gt;</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
 </msg>
 
-<msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">DATA&lt;0&gt;</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
+<msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">CPU_BG</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
 </msg>
 
-<msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">DATA&lt;10&gt;</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
-</msg>
-
-<msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">DATA&lt;11&gt;</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
-</msg>
-
-<msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">DATA&lt;1&gt;</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
-</msg>
-
-<msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">DATA&lt;2&gt;</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
-</msg>
-
-<msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">DATA&lt;3&gt;</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
-</msg>
-
-<msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">DATA&lt;4&gt;</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
-</msg>
-
-<msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">DATA&lt;5&gt;</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
-</msg>
-
-<msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">DATA&lt;6&gt;</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
-</msg>
-
-<msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">DATA&lt;7&gt;</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
-</msg>
-
-<msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">DATA&lt;8&gt;</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
-</msg>
-
-<msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">DATA&lt;9&gt;</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
-</msg>
-
-<msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">HALT</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
+<msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">CPU_BR</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
 </msg>
 
 <msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">SPARE_NO_CONNECT</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
 </msg>
 
-<msg type="warning" file="Cpld" num="1007" delta="old" >Removing unused input(s) &apos;<arg fmt="%s" index="1">SPI_MISO</arg>&apos;.  The input(s) are unused after optimization. Please verify functionality via simulation.
+<msg type="warning" file="Cpld" num="896" delta="old" >Unable to map all desired signals into function block, FB<arg fmt="%d" index="1">7</arg>, because too many function block product terms are required. Buffering output signal <arg fmt="%s" index="2">SPI_SCK</arg> to allow all signals assigned to this function block to be placed.
+</msg>
+
+<msg type="warning" file="Cpld" num="896" delta="old" >Unable to map all desired signals into function block, FB<arg fmt="%d" index="1">7</arg>, because too many function block product terms are required. Buffering output signal <arg fmt="%s" index="2">SPI_MOSI</arg> to allow all signals assigned to this function block to be placed.
+</msg>
+
+<msg type="warning" file="Cpld" num="896" delta="old" >Unable to map all desired signals into function block, FB<arg fmt="%d" index="1">7</arg>, because too many function block product terms are required. Buffering output signal <arg fmt="%s" index="2">SPI_CS</arg> to allow all signals assigned to this function block to be placed.
+</msg>
+
+<msg type="warning" file="Cpld" num="896" delta="old" >Unable to map all desired signals into function block, FB<arg fmt="%d" index="1">7</arg>, because too many function block product terms are required. Buffering output signal <arg fmt="%s" index="2">IO_PORT&lt;1&gt;</arg> to allow all signals assigned to this function block to be placed.
 </msg>
 
 </messages>

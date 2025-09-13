@@ -24,6 +24,9 @@
     
     Revision 0.2 - 29.08.2021
     Code clean up and bug fix improvements.
+	 
+    Revision 0.3 - 12.09.2025
+    Fixed an issue with RAM addressing over 1Mb.	 
 */
 
 `define FASTRAM_SIZE_2MB
@@ -247,12 +250,12 @@ assign DATA[15:0] = (AUTOCONFIG_RANGE == 1'b1 && ACCESS && RW == 1'b1 && ~&allCo
 // --- RAM Control
 
 // RAM control arbitration.
-wire RAM3_CS = (UDS == 1'b0) && (~ADDRESS[20]);
-wire RAM2_CS = (LDS == 1'b0) && (~ADDRESS[20]);
-wire RAM1_CS = (UDS == 1'b0) && (ADDRESS[20]);
-wire RAM0_CS = (LDS == 1'b0) && (ADDRESS[20]);
+wire RAM3_CS = (UDS == 1'b0) && (ADDRESS[20] == 1'b1);
+wire RAM2_CS = (LDS == 1'b0) && (ADDRESS[20] == 1'b1);
+wire RAM1_CS = (UDS == 1'b0) && (ADDRESS[20] == 1'b0);
+wire RAM0_CS = (LDS == 1'b0) && (ADDRESS[20] == 1'b0);
 
-assign RAM_CS[3:0] = FASTRAM_RANGE ? {~RAM3_CS, ~RAM2_CS, ~RAM1_CS, ~RAM0_CS} : {1'b1, 1'b1, 1'b1, 1'b1};
+assign RAM_CS[3:0] = (FASTRAM_RANGE & ACCESS) ? {~RAM3_CS, ~RAM2_CS, ~RAM1_CS, ~RAM0_CS} : {1'b1, 1'b1, 1'b1, 1'b1};
 
 // --- IDE Control
 
