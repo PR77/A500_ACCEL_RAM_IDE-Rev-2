@@ -1,5 +1,7 @@
-Logic/*.cmd
-Logic/*.log
-Logic/*.html
-Logic/*.err
-Logic/*.xmsgs
+/Logic/*.cmd
+/Logic/*.log
+/Logic/*.html
+/Logic/*.err
+/Logic/*.xmsgs
+/Logic/_xmsgs/*
+/Logic/iseconfig/*
